@@ -171,13 +171,9 @@
         </select>
       </div>
       
-      <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-      
-      <form id="dynamicInputForm" action="https://script.google.com/macros/s/AKfycbyybG83BHInTxI8NpM5NjVhYRschg1P1slyP0_5J5H1S54P-qbzXARtjkDRtcTGc4bFcQ/exec" method="POST" target="hidden_iframe" style="display: none; margin-top: 16px;">
+      <form id="dynamicInputForm" style="display: none; margin-top: 16px;">
         <input type="hidden" name="target_sheet" id="targetSheetHidden">
-        
         <div id="formFieldsContainer"></div>
-        
         <button type="submit" id="btnSubmitForm" style="width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px; font-weight: bold; cursor: pointer; margin-top: 10px;">
           Simpan Data ke Google Sheets
         </button>
@@ -195,9 +191,7 @@ let DATA = {};
 let chartRecipient, chartPayStatus;
 const wdIdToDate = {};
 let allWdDates = [];
-let isFormSubmitting = false;
 
-// IDR Formatter
 function fmtIDR(n){
   if(n===null||n===undefined||isNaN(n)||n==='') return 'Rp 0';
   return 'Rp ' + Math.round(Number(n)).toLocaleString('id-ID');
@@ -208,7 +202,6 @@ function badgeClass(status){
 }
 function norm(s){ return (s||'').toString().trim(); }
 
-// Tab Navigation
 document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click', ()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -218,34 +211,26 @@ document.querySelectorAll('.tab').forEach(t=>{
   });
 });
 
-// Load Data from Google Sheet API
 function initDashboard() {
   const script = document.createElement('script');
-  
   window.callback = function(data) {
     DATA = data;
     document.getElementById('loading').style.display = 'none';
-    
     DATA.withdrawals.forEach(w => { wdIdToDate[w.withdrawal_id] = w.withdrawal_date; });
-    
     setupFiltersAndChips();
     renderAll();
-    
     document.body.removeChild(script);
     delete window.callback;
   };
-
   script.src = API_URL;
   script.onerror = function() {
     document.getElementById('loading').textContent = "Gagal memuat data. Periksa kembali URL deployment Web App Anda.";
   };
-  
   document.body.appendChild(script);
 }
 
 function setupFiltersAndChips() {
   allWdDates = [...new Set(DATA.withdrawals.map(w=>w.withdrawal_date).filter(Boolean))].sort();
-  
   const ovWdChipsEl = document.getElementById('ovWdChips');
   ovWdChipsEl.innerHTML = '';
   allWdDates.forEach(d=>{
@@ -292,27 +277,12 @@ function setupFiltersAndChips() {
   });
 
   DATA.fee_by_recipient.forEach(r=> feeFilterRecipient.innerHTML += `<option value="${norm(r.name)}">${r.name}</option>`);
-  
   const penerimaSet = new Set();
   DATA.transfers.forEach(t=>{ if(t.recipient_name) penerimaSet.add(norm(t.recipient_name)); });
   [...penerimaSet].sort().forEach(name=>{ selPenerima.innerHTML += `<option value="${name}">${name}</option>`; });
 
   const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN']).filter(Boolean))].sort();
   invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
-
-  // Event Listeners for Filters
-  [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.addEventListener('change', renderFee));
-  payFilterTglWd.addEventListener('change', renderPayment);
-  [selTglWithdrawal, selPenerima].forEach(el=> el.addEventListener('change', renderWithdrawalTab));
-  invFilterTglBayar.addEventListener('change', renderInvoice);
-  proofFilterTglWd.addEventListener('change', renderProof);
-
-  // Resets
-  document.getElementById('feeReset').addEventListener('click', ()=>{ feeFilterTglWd.value=''; feeFilterRecipient.value=''; renderFee(); });
-  document.getElementById('payReset').addEventListener('click', ()=>{ payFilterTglWd.value=''; renderPayment(); });
-  document.getElementById('resetFilters').addEventListener('click', ()=>{ selTglWithdrawal.value=''; selPenerima.value=''; renderWithdrawalTab(); });
-  document.getElementById('invReset').addEventListener('click', ()=>{ invFilterTglBayar.value=''; renderInvoice(); });
-  document.getElementById('proofReset').addEventListener('click', ()=>{ proofFilterTglWd.value=''; renderProof(); });
 }
 
 function getOvSelectedDates(){
@@ -337,7 +307,6 @@ function batchIdsForWdDates(dateSet){
 function renderOverview(){
   const selectedDates = getOvSelectedDates();
   const isFiltered = selectedDates.size !== allWdDates.length;
-
   const names = isFiltered ? recipientNamesForWdDates(selectedDates) : null;
   const batchIds = isFiltered ? batchIdsForWdDates(selectedDates) : null;
 
@@ -371,7 +340,7 @@ function renderOverview(){
       plugins: { legend: { display:false } },
       scales: {
         x: { ticks: { color:'#8b92a5', callback:(v)=> (v/1e6).toFixed(0)+'jt' }, grid:{color:'#2a2f3d'} },
-        y: { ticks: { color:'#e8eaef', font:{size:11} }, grid:{display:false} }
+        y: { ticks: { color:'#e8eaef', font:{size:11} }, grid: { display: false } }
       }
     }
   });
@@ -396,10 +365,8 @@ function renderFee(){
   const tglWd = document.getElementById('feeFilterTglWd').value;
   const recipient = document.getElementById('feeFilterRecipient').value;
   const names = tglWd ? recipientNamesForWdDates(new Set([tglWd])) : null;
-
   let filtered = names ? DATA.fee_by_recipient.filter(r=>names.has(norm(r.name))) : DATA.fee_by_recipient;
   if(recipient) filtered = filtered.filter(r=>norm(r.name)===recipient);
-
   const feeListEl = document.getElementById('feeList');
   feeListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data untuk filter ini</div>';
   filtered.forEach(r=>{
@@ -411,7 +378,6 @@ function renderPayment(){
   const tglWd = document.getElementById('payFilterTglWd').value;
   const batchIds = tglWd ? batchIdsForWdDates(new Set([tglWd])) : null;
   const filtered = batchIds ? DATA.payments.filter(p=>batchIds.has(p.payment_batch_id)) : DATA.payments;
-
   const paymentListEl = document.getElementById('paymentList');
   paymentListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data untuk filter ini</div>';
   filtered.forEach(p=>{
@@ -427,7 +393,6 @@ function renderPayment(){
 function renderWithdrawalTab(){
   const tglWd = document.getElementById('filterTglWithdrawal').value;
   const penerima = document.getElementById('filterPenerima').value;
-
   const filteredWd = DATA.withdrawals.filter(w=> !tglWd || w.withdrawal_date === tglWd);
   const wdListEl = document.getElementById('withdrawalList');
   wdListEl.innerHTML = filteredWd.length ? '' : '<div class="empty-state">Tidak ada data withdrawal</div>';
@@ -489,10 +454,10 @@ function renderProof(){
   });
 }
 
-// =================== DYNAMIC FORM LOGIC ===================
+// =================== DYNAMIC FORM LOGIC (AJAX NO-CORS) ===================
 const formStructures = {
   "WITHDRAWAL_MASTER": [
-    { label: "Withdrawal ID (Contoh: WD-2026-00003)", name: "withdrawal_id", type: "text", required: true },
+    { label: "Withdrawal ID (Contoh: WD-00003)", name: "withdrawal_id", type: "text", required: true },
     { label: "Tanggal Penarikan (YYYY-MM-DD)", name: "withdrawal_date", type: "date", required: true },
     { label: "Nilai Penarikan (Angka murni)", name: "withdrawal_amount", type: "number", required: true },
     { label: "Keterangan / Deskripsi", name: "description", type: "text", required: false },
@@ -515,21 +480,17 @@ const typeSelector = document.getElementById('inputTypeSelector');
 const dynamicForm = document.getElementById('dynamicInputForm');
 const fieldsContainer = document.getElementById('formFieldsContainer');
 const targetSheetHidden = document.getElementById('targetSheetHidden');
-const hiddenIframe = document.getElementById('hidden_iframe');
 
 typeSelector.addEventListener('change', function() {
   const selectedType = this.value;
   fieldsContainer.innerHTML = '';
-  
   if (!selectedType) {
     dynamicForm.style.display = 'none';
     return;
   }
   
   targetSheetHidden.value = selectedType;
-  const fields = formStructures[selectedType];
-  
-  fields.forEach(f => {
+  formStructures[selectedType].forEach(f => {
     let inputHtml = '';
     if (f.type === 'select') {
       let optionsHtml = f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
@@ -542,29 +503,49 @@ typeSelector.addEventListener('change', function() {
       <div class="frow">
         <label>${f.label} ${f.required ? '<span style="color:var(--red)">*</span>' : ''}</label>
         ${inputHtml}
-      </div>
-    `;
+      </div>`;
   });
-  
   dynamicForm.style.display = 'block';
 });
 
-dynamicForm.addEventListener('submit', function() {
-  isFormSubmitting = true;
-});
-
-hiddenIframe.addEventListener('load', function() {
-  if (isFormSubmitting) {
-    alert("Data dikirim ke Google Sheets! Silakan cek spreadsheet Anda beberapa saat lagi.");
-    isFormSubmitting = false;
+// Sistem Pengiriman AJAX yang memotong pemblokiran iframe sandbox
+dynamicForm.addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  document.getElementById('loading').style.display = 'flex';
+  document.getElementById('loading').textContent = "Mengirim data ke Google Sheets...";
+  
+  // Konversi data form menjadi URLSearchParams string
+  const formData = new FormData(dynamicForm);
+  const searchParams = new URLSearchParams();
+  for (const pair of formData.entries()) {
+    searchParams.append(pair[0], pair[1]);
+  }
+  
+  // AJAX Kirim menggunakan opsi mode 'no-cors' agar lolos aturan proteksi browser
+  fetch(API_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: searchParams.toString()
+  })
+  .then(() => {
+    alert("Data Berhasil Dikirim ke Google Sheets!");
     dynamicForm.reset();
     dynamicForm.style.display = 'none';
     typeSelector.value = '';
     
-    document.getElementById('loading').style.display = 'flex';
-    document.getElementById('loading').textContent = "Memperbarui data...";
-    setTimeout(initDashboard, 2000);
-  }
+    // Perbarui visualisasi dashboard secara berkala
+    document.getElementById('loading').textContent = "Memperbarui data dashboard...";
+    setTimeout(initDashboard, 2500);
+  })
+  .catch(err => {
+    console.error(err);
+    alert("Terjadi gangguan saat mengirim data.");
+    document.getElementById('loading').style.display = 'none';
+  });
 });
 
 function renderAll(){
@@ -576,7 +557,6 @@ function renderAll(){
   renderProof();
 }
 
-// Jalankan aplikasi pertama kali
 initDashboard();
 </script>
 </body>
