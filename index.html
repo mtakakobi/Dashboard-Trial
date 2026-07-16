@@ -492,7 +492,7 @@ function renderProof(){
 const formStructures = {
   "WITHDRAWAL_MASTER": [
     { label: "Withdrawal ID (Contoh: WD-2026-00003)", name: "withdrawal_id", type: "text", required: true },
-    { label: "Tanggal Penarikan (YYYY-MM-DD)", name: "withdrawal_date", type: "date", required: true },
+    { label: "Tanggal Penarikan (DD-MM-YYYY)", name: "withdrawal_date", type: "date", required: true },
     { label: "Nilai Penarikan (Angka murni, cth: 5000000)", name: "withdrawal_amount", type: "number", required: true },
     { label: "Keterangan / Deskripsi", name: "description", type: "text", required: false },
     { label: "Status Rekonsiliasi", name: "reconciliation_status", type: "select", options: ["OPEN", "PARTIAL", "BALANCED", "OVERPAID"], required: true }
@@ -503,7 +503,7 @@ const formStructures = {
     { label: "Payment Batch ID", name: "payment_batch_id", type: "text", required: true },
     { label: "Nama Penerima Fee", name: "recipient_name", type: "text", required: true },
     { label: "Nilai Transfer (Angka murni)", name: "transfer_amount", type: "number", required: true },
-    { label: "Tanggal Transfer (YYYY-MM-DD)", name: "transfer_date", type: "date", required: true },
+    { label: "Tanggal Transfer (DD-MM-YYYY)", name: "transfer_date", type: "date", required: true },
     { label: "Nama File Bukti Transfer", name: "transfer_proof_file_name", type: "text", required: false },
     { label: "Link URL Bukti Transfer (Google Drive)", name: "transfer_proof_file_url", type: "url", required: false },
     { label: "Catatan Tambahan (Remarks)", name: "remarks", type: "text", required: false }
