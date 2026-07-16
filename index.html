@@ -73,7 +73,7 @@
   <div class="tab" data-tab="withdrawal">Withdrawal</div>
   <div class="tab" data-tab="invoice">Invoice</div>
   <div class="tab" data-tab="proof">Bukti Transfer</div>
-  <div class="tab" data-tab="input-data">New Entry</div> </div>
+  <div class="tab" data-tab="input-data">New Entry</div>
 </div>
 
 <main>
@@ -184,7 +184,6 @@
       </form>
     </div>
   </section>
-  
 </main>
 
 <footer>Operational Fee Monitoring System &middot; dynamic dashboard</footer>
@@ -195,6 +194,8 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyybG83BHInTxI8NpM5NjVh
 let DATA = {};
 let chartRecipient, chartPayStatus;
 const wdIdToDate = {};
+let allWdDates = [];
+let isFormSubmitting = false;
 
 // IDR Formatter
 function fmtIDR(n){
@@ -219,21 +220,17 @@ document.querySelectorAll('.tab').forEach(t=>{
 
 // Load Data from Google Sheet API
 function initDashboard() {
-  // Membuat elemen script secara dinamis untuk memproses data JSONP tanpa kendala CORS
   const script = document.createElement('script');
   
-  // Menentukan fungsi penanganan global saat data berhasil diterima
   window.callback = function(data) {
     DATA = data;
     document.getElementById('loading').style.display = 'none';
     
-    // Memetakan ID penarikan dana ke tanggal [cite: 125, 127]
-    DATA.withdrawals.forEach(w => { wdIdToDate[w.withdrawal_id] = w.withdrawal_date; });
+    DATA.withdrawals.forEach(w => { wdIdToDate[w.withdrawal_id] = w.withdrawal_date; }); [cite: 125, 127]
     
     setupFiltersAndChips();
     renderAll();
     
-    // Bersihkan elemen skrip setelah selesai digunakan
     document.body.removeChild(script);
     delete window.callback;
   };
@@ -245,18 +242,16 @@ function initDashboard() {
   
   document.body.appendChild(script);
 }
-let allWdDates = [];
+
 function setupFiltersAndChips() {
   allWdDates = [...new Set(DATA.withdrawals.map(w=>w.withdrawal_date).filter(Boolean))].sort();
   
-  // Setup Chips Overview
   const ovWdChipsEl = document.getElementById('ovWdChips');
   ovWdChipsEl.innerHTML = '';
   allWdDates.forEach(d=>{
     ovWdChipsEl.innerHTML += `<label class="chip checked" data-date="${d}"><input type="checkbox" value="${d}" checked> ${d}</label>`;
   });
   
-  // Bind events for chips
   ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
     cb.addEventListener('change', ()=>{
       cb.closest('.chip').classList.toggle('checked', cb.checked);
@@ -264,7 +259,6 @@ function setupFiltersAndChips() {
     });
   });
 
-  // Select All / None actions
   document.getElementById('ovSelectAll').addEventListener('click', ()=>{
     ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = true; cb.closest('.chip').classList.add('checked'); });
     renderOverview();
@@ -274,7 +268,6 @@ function setupFiltersAndChips() {
     renderOverview();
   });
 
-  // Populate Dropdowns
   const feeFilterTglWd = document.getElementById('feeFilterTglWd');
   const feeFilterRecipient = document.getElementById('feeFilterRecipient');
   const payFilterTglWd = document.getElementById('payFilterTglWd');
@@ -282,6 +275,14 @@ function setupFiltersAndChips() {
   const selPenerima = document.getElementById('filterPenerima');
   const invFilterTglBayar = document.getElementById('invFilterTglBayar');
   const proofFilterTglWd = document.getElementById('proofFilterTglWd');
+
+  feeFilterTglWd.innerHTML = '<option value="">Semua Tanggal</option>';
+  payFilterTglWd.innerHTML = '<option value="">Semua Tanggal</option>';
+  selTglWithdrawal.innerHTML = '<option value="">Semua Tanggal</option>';
+  proofFilterTglWd.innerHTML = '<option value="">Semua Tanggal</option>';
+  feeFilterRecipient.innerHTML = '<option value="">Semua Penerima</option>';
+  selPenerima.innerHTML = '<option value="">Semua Penerima</option>';
+  invFilterTglBayar.innerHTML = '<option value="">Semua Tanggal</option>';
 
   allWdDates.forEach(d=> {
     feeFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
@@ -318,7 +319,6 @@ function getOvSelectedDates(){
   return new Set([...document.querySelectorAll('#ovWdChips input[type=checkbox]:checked')].map(c=>c.value));
 }
 
-// Helpers untuk filter relasi di overview
 function recipientNamesForWdDates(dateSet){
   if(!dateSet || dateSet.size === 0) return new Set();
   const wdIds = new Set(DATA.withdrawals.filter(w=>dateSet.has(w.withdrawal_date)).map(w=>w.withdrawal_id));
@@ -327,6 +327,7 @@ function recipientNamesForWdDates(dateSet){
   DATA.payments.forEach(p=>{ if(batchIds.has(p.payment_batch_id)) names.add(norm(p.recipient_name)); });
   return names;
 }
+
 function batchIdsForWdDates(dateSet){
   if(!dateSet || dateSet.size === 0) return new Set();
   const wdIds = new Set(DATA.withdrawals.filter(w=>dateSet.has(w.withdrawal_date)).map(w=>w.withdrawal_id));
@@ -358,7 +359,6 @@ function renderOverview(){
   document.getElementById('ov-withdrawal').textContent = fmtIDR(total_withdrawal);
   document.getElementById('ov-transfer').textContent = fmtIDR(total_transfer);
 
-  // Render Bar Chart
   if(chartRecipient) chartRecipient.destroy();
   chartRecipient = new Chart(document.getElementById('chartRecipient'), {
     type: 'bar',
@@ -376,7 +376,6 @@ function renderOverview(){
     }
   });
 
-  // Render Doughnut Chart
   const payStatusCounts = {};
   filteredPayments.forEach(p=>{
     const s = p.status || 'OPEN';
@@ -488,24 +487,26 @@ function renderProof(){
         ${url ? `<a class="proof-link" href="${url.trim()}" target="_blank">📎 ${name}</a>` : '<div class="mid">Tidak ada bukti</div>'}
       </div>`;
   });
-  // Konfigurasi field form berdasarkan struktur kolom Google Sheets
+}
+
+// =================== DYNAMIC FORM LOGIC ===================
 const formStructures = {
   "WITHDRAWAL_MASTER": [
     { label: "Withdrawal ID (Contoh: WD-2026-00003)", name: "withdrawal_id", type: "text", required: true },
-    { label: "Tanggal Penarikan (DD-MM-YYYY)", name: "withdrawal_date", type: "date", required: true },
-    { label: "Nilai Penarikan (Angka murni, cth: 5000000)", name: "withdrawal_amount", type: "number", required: true },
+    { label: "Tanggal Penarikan (YYYY-MM-DD)", name: "withdrawal_date", type: "date", required: true },
+    { label: "Nilai Penarikan (Angka murni)", name: "withdrawal_amount", type: "number", required: true },
     { label: "Keterangan / Deskripsi", name: "description", type: "text", required: false },
     { label: "Status Rekonsiliasi", name: "reconciliation_status", type: "select", options: ["OPEN", "PARTIAL", "BALANCED", "OVERPAID"], required: true }
   ],
   "TRANSFER_DETAIL": [
     { label: "Transfer ID (Contoh: TR-2026-00017)", name: "transfer_id", type: "text", required: true },
-    { label: "Withdrawal ID (Harus sama dengan di Master)", name: "withdrawal_id", type: "text", required: true },
+    { label: "Withdrawal ID (Harus ada di Master)", name: "withdrawal_id", type: "text", required: true },
     { label: "Payment Batch ID", name: "payment_batch_id", type: "text", required: true },
     { label: "Nama Penerima Fee", name: "recipient_name", type: "text", required: true },
     { label: "Nilai Transfer (Angka murni)", name: "transfer_amount", type: "number", required: true },
-    { label: "Tanggal Transfer (DD-MM-YYYY)", name: "transfer_date", type: "date", required: true },
+    { label: "Tanggal Transfer (YYYY-MM-DD)", name: "transfer_date", type: "date", required: true },
     { label: "Nama File Bukti Transfer", name: "transfer_proof_file_name", type: "text", required: false },
-    { label: "Link URL Bukti Transfer (Google Drive)", name: "transfer_proof_file_url", type: "url", required: false },
+    { label: "Link URL Bukti Transfer (GDrive)", name: "transfer_proof_file_url", type: "url", required: false },
     { label: "Catatan Tambahan (Remarks)", name: "remarks", type: "text", required: false }
   ]
 };
@@ -516,7 +517,6 @@ const fieldsContainer = document.getElementById('formFieldsContainer');
 const targetSheetHidden = document.getElementById('targetSheetHidden');
 const hiddenIframe = document.getElementById('hidden_iframe');
 
-// Event saat kategori data dipilih
 typeSelector.addEventListener('change', function() {
   const selectedType = this.value;
   fieldsContainer.innerHTML = '';
@@ -535,7 +535,7 @@ typeSelector.addEventListener('change', function() {
       let optionsHtml = f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
       inputHtml = `<select name="${f.name}" ${f.required ? 'required' : ''}>${optionsHtml}</select>`;
     } else {
-      inputHtml = `<input type="${f.type}" name="${f.name}" placeholder="Masukkan ${f.label.split(' ')[0]}..." ${f.required ? 'required' : ''} style="width:100%; background:var(--card2); color:var(--txt); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:13px;">`;
+      inputHtml = `<input type="${f.type}" name="${f.name}" placeholder="Masukkan data..." ${f.required ? 'required' : ''} style="width:100%; background:var(--card2); color:var(--txt); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:13px;">`;
     }
     
     fieldsContainer.innerHTML += `
@@ -549,22 +549,23 @@ typeSelector.addEventListener('change', function() {
   dynamicForm.style.display = 'block';
 });
 
-// Menangani aksi pasca-submit form melalui pendeteksian beban Iframe tersembunyi
+dynamicForm.addEventListener('submit', function() {
+  isFormSubmitting = true;
+});
+
 hiddenIframe.addEventListener('load', function() {
-  // Jika form sedang tampil dan dipicu submit
-  if (dynamicForm.style.display === 'block') {
-    alert("Data Berhasil Disimpan ke Google Sheets!");
+  if (isFormSubmitting) {
+    alert("Data dikirim ke Google Sheets! Silakan cek spreadsheet Anda beberapa saat lagi.");
+    isFormSubmitting = false;
     dynamicForm.reset();
-    dynamicForm.style.style.display = 'none';
+    dynamicForm.style.display = 'none';
     typeSelector.value = '';
     
-    // Refresh otomatis data dashboard
     document.getElementById('loading').style.display = 'flex';
     document.getElementById('loading').textContent = "Memperbarui data...";
-    initDashboard(); 
+    setTimeout(initDashboard, 2000);
   }
 });
-}
 
 function renderAll(){
   renderOverview();
@@ -575,7 +576,7 @@ function renderAll(){
   renderProof();
 }
 
-// Jalankan inisialisasi dashboard
+// Jalankan aplikasi pertama kali
 initDashboard();
 </script>
 </body>
