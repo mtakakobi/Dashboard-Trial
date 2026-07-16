@@ -200,7 +200,11 @@ function badgeClass(status){
   if(!status) return '';
   return status.toString().toLowerCase().trim();
 }
-function norm(s){ return (s||'').toString().trim(); }
+
+// AMANDEMEN UTAMA: Normalisasi string agar case-insensitive dan kebal dari bug spasi ganda ("LUSAN " === "lusan")
+function norm(s){ 
+  return (s||'').toString().trim().toLowerCase().replace(/\s+/g, ' '); 
+}
 
 // Tab Navigation
 document.querySelectorAll('.tab').forEach(t=>{
@@ -212,7 +216,7 @@ document.querySelectorAll('.tab').forEach(t=>{
   });
 });
 
-// Load Data from Google Sheet API (JSONP)
+// Load Data via JSONP
 function initDashboard() {
   const script = document.createElement('script');
   window.callback = function(data) {
@@ -246,11 +250,11 @@ function setupFiltersAndChips() {
     });
   });
 
-  document.getElementById('ovSelectAll').addEventListener('click', ()=>{
+  document.getElementById('ovSelectAll').addEventListener('click', () => {
     ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = true; cb.closest('.chip').classList.add('checked'); });
     renderOverview();
   });
-  document.getElementById('ovSelectNone').addEventListener('click', ()=>{
+  document.getElementById('ovSelectNone').addEventListener('click', () => {
     ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = false; cb.closest('.chip').classList.remove('checked'); });
     renderOverview();
   });
@@ -278,15 +282,32 @@ function setupFiltersAndChips() {
     proofFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
   });
 
-  // Sinkronisasi seluruh dropdown penapis menggunakan basis array master recipients global
+  // Ambil data nama master penerima yang bersih dan unik dari RECIPIENT_MASTER
   const masterRecipients = [...new Set(DATA.recipients.map(r=>norm(r.recipient_name)).filter(Boolean))].sort();
-  masterRecipients.forEach(name => {
-    feeFilterRecipient.innerHTML += `<option value="${name}">${name}</option>`;
-    selPenerima.innerHTML += `<option value="${name}">${name}</option>`;
+  
+  // Tampilkan teks dengan format nama kapital asli awal kalimat (Capitalize)
+  masterRecipients.forEach(rawName => {
+    const displayName = rawName.toUpperCase();
+    feeFilterRecipient.innerHTML += `<option value="${rawName}">${displayName}</option>`;
+    selPenerima.innerHTML += `<option value="${rawName}">${displayName}</option>`;
   });
 
   const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN']).filter(Boolean))].sort();
   invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
+
+  // Event Listeners for Filter Triggers
+  [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.addEventListener('change', renderFee));
+  payFilterTglWd.addEventListener('change', renderPayment);
+  [selTglWithdrawal, selPenerima].forEach(el=> el.addEventListener('change', renderWithdrawalTab));
+  invFilterTglBayar.addEventListener('change', renderInvoice);
+  proofFilterTglWd.addEventListener('change', renderProof);
+
+  // Resets
+  document.getElementById('feeReset').addEventListener('click', ()=>{ feeFilterTglWd.value=''; feeFilterRecipient.value=''; renderFee(); });
+  document.getElementById('payReset').addEventListener('click', ()=>{ payFilterTglWd.value=''; renderPayment(); });
+  document.getElementById('resetFilters').addEventListener('click', ()=>{ selTglWithdrawal.value=''; selPenerima.value=''; renderWithdrawalTab(); });
+  document.getElementById('invReset').addEventListener('click', ()=>{ invFilterTglBayar.value=''; renderInvoice(); });
+  document.getElementById('proofReset').addEventListener('click', ()=>{ proofFilterTglWd.value=''; renderProof(); });
 }
 
 function getOvSelectedDates(){
@@ -336,7 +357,7 @@ function renderOverview(){
   chartRecipient = new Chart(document.getElementById('chartRecipient'), {
     type: 'bar',
     data: {
-      labels: filteredFee.map(r=>r.name),
+      labels: filteredFee.map(r=>r.name.toUpperCase()),
       datasets: [{ data: filteredFee.map(r=>r.amount), backgroundColor: '#5b8def', borderRadius: 6 }]
     },
     options: {
@@ -366,20 +387,21 @@ function renderOverview(){
 }
 
 function renderFee(){
-  const tglWd = document.getElementById('feeFilterTglWd').value;
-  const recipient = document.getElementById('feeFilterRecipient').value;
+  const tglWd = feeFilterTglWd.value;
+  const recipient = feeFilterRecipient.value;
   const names = tglWd ? recipientNamesForWdDates(new Set([tglWd])) : null;
   let filtered = names ? DATA.fee_by_recipient.filter(r=>names.has(norm(r.name))) : DATA.fee_by_recipient;
+  
   if(recipient) filtered = filtered.filter(r=>norm(r.name)===recipient);
   const feeListEl = document.getElementById('feeList');
   feeListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data untuk filter ini</div>';
   filtered.forEach(r=>{
-    feeListEl.innerHTML += `<div class="row-card"><div class="top"><span>${r.name}</span><span class="amount">${fmtIDR(r.amount)}</span></div></div>`;
+    feeListEl.innerHTML += `<div class="row-card"><div class="top"><span>${r.name.toUpperCase()}</span><span class="amount">${fmtIDR(r.amount)}</span></div></div>`;
   });
 }
 
 function renderPayment(){
-  const tglWd = document.getElementById('payFilterTglWd').value;
+  const tglWd = payFilterTglWd.value;
   const batchIds = tglWd ? batchIdsForWdDates(new Set([tglWd])) : null;
   const filtered = batchIds ? DATA.payments.filter(p=>batchIds.has(p.payment_batch_id)) : DATA.payments;
   const paymentListEl = document.getElementById('paymentList');
@@ -387,7 +409,7 @@ function renderPayment(){
   filtered.forEach(p=>{
     paymentListEl.innerHTML += `
       <div class="row-card">
-        <div class="top"><span>${p.recipient_name||''}</span><span class="badge ${badgeClass(p.status)}">${p.status||'OPEN'}</span></div>
+        <div class="top"><span>${(p.recipient_name||'').toUpperCase()}</span><span class="badge ${badgeClass(p.status)}">${p.status||'OPEN'}</span></div>
         <div class="mid">${p.payment_batch_id||''} &middot; ${p.invoice_count||0} invoice &middot; ${p.tax_method||''}</div>
         <div class="top"><span style="font-weight:400;color:#8b92a5;">Net Amount</span><span class="amount">${fmtIDR(p.net_amount)}</span></div>
       </div>`;
@@ -395,8 +417,8 @@ function renderPayment(){
 }
 
 function renderWithdrawalTab(){
-  const tglWd = document.getElementById('filterTglWithdrawal').value;
-  const penerima = document.getElementById('filterPenerima').value;
+  const tglWd = selTglWithdrawal.value;
+  const penerima = selPenerima.value;
   const filteredWd = DATA.withdrawals.filter(w=> !tglWd || w.withdrawal_date === tglWd);
   const wdListEl = document.getElementById('withdrawalList');
   wdListEl.innerHTML = filteredWd.length ? '' : '<div class="empty-state">Tidak ada data withdrawal</div>';
@@ -405,7 +427,7 @@ function renderWithdrawalTab(){
       <div class="row-card">
         <div class="top"><span>${w.withdrawal_id}</span><span class="badge ${badgeClass(w.reconciliation_status)}">${w.reconciliation_status||'OPEN'}</span></div>
         <div class="mid">${w.withdrawal_date} &middot; ${w.description||''}</div>
-        <div class="top"><span style="font-weight:400;color:#8b92a5;">Withdrawal</span><span class="amount">${fmtIDR(w.withdrawal_amount)}</span></div>
+        <div class="top"><span style="font-weight:400;color:#8b92a5;">Amount</span><span class="amount">${fmtIDR(w.withdrawal_amount)}</span></div>
       </div>`;
   });
 
@@ -420,14 +442,14 @@ function renderWithdrawalTab(){
   filteredTr.forEach(t=>{
     trListEl.innerHTML += `
       <div class="row-card">
-        <div class="top"><span>${t.recipient_name||''}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
+        <div class="top"><span>${(t.recipient_name||'').toUpperCase()}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
         <div class="mid">${t.transfer_date||''} &middot; WD: ${t.withdrawal_id}</div>
       </div>`;
   });
 }
 
 function renderInvoice(){
-  const tgl = document.getElementById('invFilterTglBayar').value;
+  const tgl = invFilterTglBayar.value;
   const filtered = tgl ? DATA.invoices.filter(i=>i['TANGGAL PEMBAYARAN']===tgl) : DATA.invoices;
   const invListEl = document.getElementById('invoiceList');
   invListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
@@ -442,7 +464,7 @@ function renderInvoice(){
 }
 
 function renderProof(){
-  const tgl = document.getElementById('proofFilterTglWd').value;
+  const tgl = proofFilterTglWd.value;
   const filtered = tgl ? DATA.transfers.filter(t=>wdIdToDate[t.withdrawal_id]===tgl) : DATA.transfers;
   const proofListEl = document.getElementById('proofList');
   proofListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
@@ -451,7 +473,7 @@ function renderProof(){
     const name = t.transfer_proof_file_name || t.transfer_proof_name || 'Lihat Bukti';
     proofListEl.innerHTML += `
       <div class="row-card">
-        <div class="top"><span>${t.recipient_name||''}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
+        <div class="top"><span>${(t.recipient_name||'').toUpperCase()}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
         <div class="mid">${t.transfer_date || ''}</div>
         ${url ? `<a class="proof-link" href="${url.trim()}" target="_blank">📎 ${name}</a>` : '<div class="mid">Tidak ada bukti</div>'}
       </div>`;
@@ -508,7 +530,7 @@ typeSelector.addEventListener('change', function() {
     } else if (f.type === 'select_recipient') {
       const rOptions = [...new Set(DATA.recipients.map(r => norm(r.recipient_name)).filter(Boolean))].sort();
       let optionsHtml = '<option value="">-- Pilih Penerima --</option>';
-      optionsHtml += rOptions.map(name => `<option value="${name}">${name}</option>`).join('');
+      optionsHtml += rOptions.map(name => `<option value="${name}">${name.toUpperCase()}</option>`).join('');
       inputHtml = `<select name="${f.name}" ${f.required ? 'required' : ''}>${optionsHtml}</select>`;
     } else {
       inputHtml = `<input type="${f.type}" name="${f.name}" placeholder="Masukkan data..." ${f.required ? 'required' : ''} style="width:100%; background:var(--card2); color:var(--txt); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:13px;">`;
@@ -523,7 +545,6 @@ typeSelector.addEventListener('change', function() {
   dynamicForm.style.display = 'block';
 });
 
-// Sistem Pengiriman AJAX Terkendali
 dynamicForm.addEventListener('submit', function(e) {
   e.preventDefault();
   
@@ -569,7 +590,6 @@ function renderAll(){
   renderProof();
 }
 
-// Jalankan aplikasi pertama kali
 initDashboard();
 </script>
 </body>
