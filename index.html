@@ -192,6 +192,7 @@ let chartRecipient, chartPayStatus;
 const wdIdToDate = {};
 let allWdDates = [];
 
+// Variabel Global Filter DOM
 let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, selPenerima, invFilterTglBayar, proofFilterTglWd;
 
 function fmtIDR(n){
@@ -261,6 +262,7 @@ function setupFiltersAndChips() {
     renderOverview();
   });
 
+  // Alokasi Penargetan DOM ke Variabel Global
   feeFilterTglWd = document.getElementById('feeFilterTglWd');
   feeFilterRecipient = document.getElementById('feeFilterRecipient');
   payFilterTglWd = document.getElementById('payFilterTglWd');
@@ -284,7 +286,7 @@ function setupFiltersAndChips() {
     proofFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
   });
 
-  // REVERT LOGIK: Dropdown filter hanya menampilkan nama penerima yang MEMILIKI TRANSAKSI AKTIF
+  // Hanya memuat nama penerima yang sudah memproses transaksi aktif agar dropdown rapi
   const activeRecipients = [...new Set(DATA.fee_by_recipient.map(r=>norm(r.name)).filter(Boolean))].sort();
   activeRecipients.forEach(rawName => {
     const displayName = rawName.toUpperCase();
@@ -295,12 +297,14 @@ function setupFiltersAndChips() {
   const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN']).filter(Boolean))].sort();
   invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
 
+  // Daftarkan Event Listener
   [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.addEventListener('change', renderFee));
   payFilterTglWd.addEventListener('change', renderPayment);
   [selTglWithdrawal, selPenerima].forEach(el=> el.addEventListener('change', renderWithdrawalTab));
   invFilterTglBayar.addEventListener('change', renderInvoice);
   proofFilterTglWd.addEventListener('change', renderProof);
 
+  // Fungsi Reset
   document.getElementById('feeReset').addEventListener('click', ()=>{ feeFilterTglWd.value=''; feeFilterRecipient.value=''; renderFee(); });
   document.getElementById('payReset').addEventListener('click', ()=>{ payFilterTglWd.value=''; renderPayment(); });
   document.getElementById('resetFilters').addEventListener('click', ()=>{ selTglWithdrawal.value=''; selPenerima.value=''; renderWithdrawalTab(); });
@@ -425,13 +429,29 @@ function renderPayment(){
   });
 }
 
+// AMANDEMEN LOGIKA UTAMA: Saling menyaring multi-kondisi antar tabel secara paralel (CORS & Relation Cross-match)
 function renderWithdrawalTab(){
   const tglWd = selTglWithdrawal.value;
   const penerima = selPenerima.value;
-  const filteredWd = DATA.withdrawals.filter(w=> !tglWd || w.withdrawal_date === tglWd);
+
+  // Lacak daftar Withdrawal ID yang terkait dengan Penerima yang sedang dipilih di dropdown
+  const validWdIdsForRecipient = new Set();
+  DATA.transfers.forEach(t => {
+    if (!penerima || norm(t.recipient_name) === penerima) {
+      validWdIdsForRecipient.add(t.withdrawal_id);
+    }
+  });
+
+  // 1. Saring Data Withdrawal di Atas
+  const filteredWd = DATA.withdrawals.filter(w => {
+    if (tglWd && w.withdrawal_date !== tglWd) return false;
+    if (penerima && !validWdIdsForRecipient.has(w.withdrawal_id)) return false; // Ikut mengecil jika nama di bawah dipilih
+    return true;
+  });
+
   const wdListEl = document.getElementById('withdrawalList');
-  wdListEl.innerHTML = filteredWd.length ? '' : '<div class="empty-state">Tidak ada data withdrawal</div>';
-  filteredWd.forEach(w=>{
+  wdListEl.innerHTML = filteredWd.length ? '' : '<div class="empty-state">Tidak ada data withdrawal untuk filter ini</div>';
+  filteredWd.forEach(w => {
     wdListEl.innerHTML += `
       <div class="row-card">
         <div class="top"><span>${w.withdrawal_id}</span><span class="badge ${badgeClass(w.reconciliation_status)}">${w.reconciliation_status||'OPEN'}</span></div>
@@ -440,15 +460,17 @@ function renderWithdrawalTab(){
       </div>`;
   });
 
-  const filteredTr = DATA.transfers.filter(t=>{
+  // 2. Saring Data Riwayat Transfer di Bawah
+  const filteredTr = DATA.transfers.filter(t => {
     const wDate = wdIdToDate[t.withdrawal_id];
-    if(tglWd && wDate !== tglWd) return false;
-    if(penerima && norm(t.recipient_name) !== penerima) return false;
+    if (tglWd && wDate !== tglWd) return false;
+    if (penerima && norm(t.recipient_name) !== penerima) return false;
     return true;
   });
+
   const trListEl = document.getElementById('transferList');
-  trListEl.innerHTML = filteredTr.length ? '' : '<div class="empty-state">Tidak ada data transfer</div>';
-  filteredTr.forEach(t=>{
+  trListEl.innerHTML = filteredTr.length ? '' : '<div class="empty-state">Tidak ada data transfer untuk filter ini</div>';
+  filteredTr.forEach(t => {
     trListEl.innerHTML += `
       <div class="row-card">
         <div class="top"><span>${(t.recipient_name||'').toUpperCase()}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
@@ -537,7 +559,6 @@ typeSelector.addEventListener('change', function() {
       optionsHtml += wdOptions.map(id => `<option value="${id}">${id}</option>`).join('');
       inputHtml = `<select name="${f.name}" ${f.required ? 'required' : ''}>${optionsHtml}</select>`;
     } else if (f.type === 'select_recipient') {
-      // Form New Entry TETAP mengambil dari seluruh RECIPIENT_MASTER agar bisa input data baru
       const rOptions = [...new Set(DATA.recipients.map(r => norm(r.recipient_name)).filter(Boolean))].sort();
       let optionsHtml = '<option value="">-- Pilih Penerima --</option>';
       optionsHtml += rOptions.map(name => `<option value="${name}">${name.toUpperCase()}</option>`).join('');
