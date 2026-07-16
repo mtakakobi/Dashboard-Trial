@@ -230,28 +230,71 @@ function initDashboard() {
 }
 
 function setupFiltersAndChips() {
-  allWdDates = [...new Set(DATA.withdrawals.map(w=>w.withdrawal_date).filter(Boolean))].sort();
+  // 1. Setup Chips Tanggal pada Tab Overview [cite: 125, 127]
+  allWdDates = [...new Set(DATA.withdrawals.map(w => w.withdrawal_date).filter(Boolean))].sort();
   const ovWdChipsEl = document.getElementById('ovWdChips');
   ovWdChipsEl.innerHTML = '';
-  allWdDates.forEach(d=>{
+  allWdDates.forEach(d => {
     ovWdChipsEl.innerHTML += `<label class="chip checked" data-date="${d}"><input type="checkbox" value="${d}" checked> ${d}</label>`;
   });
   
-  ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
-    cb.addEventListener('change', ()=>{
+  // Bind event ketika chip tanggal diubah
+  ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
       cb.closest('.chip').classList.toggle('checked', cb.checked);
       renderOverview();
     });
   });
 
-  document.getElementById('ovSelectAll').addEventListener('click', ()=>{
-    ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = true; cb.closest('.chip').classList.add('checked'); });
+  // Bind event untuk tombol Pilih Semua / Kosongkan di Overview
+  document.getElementById('ovSelectAll').addEventListener('click', () => {
+    ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = true; cb.closest('.chip').classList.add('checked'); });
     renderOverview();
   });
-  document.getElementById('ovSelectNone').addEventListener('click', ()=>{
-    ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = false; cb.closest('.chip').classList.remove('checked'); });
+  document.getElementById('ovSelectNone').addEventListener('click', () => {
+    ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb => { cb.checked = false; cb.closest('.chip').classList.remove('checked'); });
     renderOverview();
   });
+
+  // 2. Inisialisasi Konten Pilihan Elemen Dropdown Filter
+  const feeFilterTglWd = document.getElementById('feeFilterTglWd');
+  const feeFilterRecipient = document.getElementById('feeFilterRecipient');
+  const payFilterTglWd = document.getElementById('payFilterTglWd');
+  const selTglWithdrawal = document.getElementById('filterTglWithdrawal');
+  const selPenerima = document.getElementById('filterPenerima');
+  const invFilterTglBayar = document.getElementById('invFilterTglBayar');
+  const proofFilterTglWd = document.getElementById('proofFilterTglWd');
+
+  // Reset opsi default agar tidak menumpuk saat reload data
+  feeFilterTglWd.innerHTML = '<option value="">Semua Tanggal Withdrawal</option>';
+  payFilterTglWd.innerHTML = '<option value="">Semua Tanggal Withdrawal</option>';
+  selTglWithdrawal.innerHTML = '<option value="">Semua Tanggal Withdrawal</option>';
+  proofFilterTglWd.innerHTML = '<option value="">Semua Tanggal Withdrawal</option>';
+  feeFilterRecipient.innerHTML = '<option value="">Semua Penerima</option>';
+  selPenerima.innerHTML = '<option value="">Semua Penerima</option>';
+  invFilterTglBayar.innerHTML = '<option value="">Semua Tanggal</option>';
+
+  // Isi opsi filter tanggal berdasarkan daftar tanggal penarikan yang ada [cite: 125, 127]
+  allWdDates.forEach(d => {
+    feeFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
+    payFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
+    selTglWithdrawal.innerHTML += `<option value="${d}">${d}</option>`;
+    proofFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
+  });
+
+  // PERBAIKAN UTAMA: Mengambil seluruh daftar unik nama penerima dari array recipients (Master Data) 
+  const masterRecipients = [...new Set(DATA.recipients.map(r => norm(r.recipient_name)).filter(Boolean))].sort();
+  
+  // Masukkan daftar nama master ke Dropdown Tab Fee dan Tab Withdrawal secara sinkron 
+  masterRecipients.forEach(name => {
+    feeFilterRecipient.innerHTML += `<option value="${name}">${name}</option>`;
+    selPenerima.innerHTML += `<option value="${name}">${name}</option>`;
+  });
+
+  // Isi opsi tanggal pembayaran invoice [cite: 119]
+  const invDates = [...new Set(DATA.invoices.map(i => i['TANGGAL PEMBAYARAN']).filter(Boolean))].sort();
+  invDates.forEach(d => invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
+}
 
   const feeFilterTglWd = document.getElementById('feeFilterTglWd');
   const feeFilterRecipient = document.getElementById('feeFilterRecipient');
