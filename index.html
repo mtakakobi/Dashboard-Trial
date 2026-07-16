@@ -186,23 +186,33 @@ document.querySelectorAll('.tab').forEach(t=>{
 });
 
 // Load Data from Google Sheet API
-async function initDashboard() {
-  try {
-    const res = await fetch(API_URL);
-    DATA = await res.json();
+function initDashboard() {
+  // Membuat elemen script secara dinamis untuk memproses data JSONP tanpa kendala CORS
+  const script = document.createElement('script');
+  
+  // Menentukan fungsi penanganan global saat data berhasil diterima
+  window.callback = function(data) {
+    DATA = data;
     document.getElementById('loading').style.display = 'none';
     
-    // Mapping internal WD ID ke Tanggal
-    DATA.withdrawals.forEach(w=>{ wdIdToDate[w.withdrawal_id] = w.withdrawal_date; });
+    // Memetakan ID penarikan dana ke tanggal [cite: 125, 127]
+    DATA.withdrawals.forEach(w => { wdIdToDate[w.withdrawal_id] = w.withdrawal_date; });
     
     setupFiltersAndChips();
     renderAll();
-  } catch (err) {
-    console.error(err);
-    document.getElementById('loading').textContent = "Gagal memuat data. Periksa URL deployment Web App Anda.";
-  }
-}
+    
+    // Bersihkan elemen skrip setelah selesai digunakan
+    document.body.removeChild(script);
+    delete window.callback;
+  };
 
+  script.src = API_URL;
+  script.onerror = function() {
+    document.getElementById('loading').textContent = "Gagal memuat data. Periksa kembali URL deployment Web App Anda.";
+  };
+  
+  document.body.appendChild(script);
+}
 let allWdDates = [];
 function setupFiltersAndChips() {
   allWdDates = [...new Set(DATA.withdrawals.map(w=>w.withdrawal_date).filter(Boolean))].sort();
