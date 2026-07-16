@@ -226,7 +226,7 @@ function initDashboard() {
     DATA = data;
     document.getElementById('loading').style.display = 'none';
     
-    DATA.withdrawals.forEach(w => { wdIdToDate[w.withdrawal_id] = w.withdrawal_date; }); [cite: 125, 127]
+    DATA.withdrawals.forEach(w => { wdIdToDate[w.withdrawal_id] = w.withdrawal_date; });
     
     setupFiltersAndChips();
     renderAll();
