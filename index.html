@@ -192,7 +192,6 @@ let chartRecipient, chartPayStatus;
 const wdIdToDate = {};
 let allWdDates = [];
 
-// Variabel Global Filter DOM
 let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, selPenerima, invFilterTglBayar, proofFilterTglWd;
 
 function fmtIDR(n){
@@ -285,8 +284,9 @@ function setupFiltersAndChips() {
     proofFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
   });
 
-  const masterRecipients = [...new Set(DATA.recipients.map(r=>norm(r.recipient_name)).filter(Boolean))].sort();
-  masterRecipients.forEach(rawName => {
+  // REVERT LOGIK: Dropdown filter hanya menampilkan nama penerima yang MEMILIKI TRANSAKSI AKTIF
+  const activeRecipients = [...new Set(DATA.fee_by_recipient.map(r=>norm(r.name)).filter(Boolean))].sort();
+  activeRecipients.forEach(rawName => {
     const displayName = rawName.toUpperCase();
     feeFilterRecipient.innerHTML += `<option value="${rawName}">${displayName}</option>`;
     selPenerima.innerHTML += `<option value="${rawName}">${displayName}</option>`;
@@ -537,6 +537,7 @@ typeSelector.addEventListener('change', function() {
       optionsHtml += wdOptions.map(id => `<option value="${id}">${id}</option>`).join('');
       inputHtml = `<select name="${f.name}" ${f.required ? 'required' : ''}>${optionsHtml}</select>`;
     } else if (f.type === 'select_recipient') {
+      // Form New Entry TETAP mengambil dari seluruh RECIPIENT_MASTER agar bisa input data baru
       const rOptions = [...new Set(DATA.recipients.map(r => norm(r.recipient_name)).filter(Boolean))].sort();
       let optionsHtml = '<option value="">-- Pilih Penerima --</option>';
       optionsHtml += rOptions.map(name => `<option value="${name}">${name.toUpperCase()}</option>`).join('');
