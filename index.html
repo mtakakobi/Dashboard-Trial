@@ -192,6 +192,9 @@ let chartRecipient, chartPayStatus;
 const wdIdToDate = {};
 let allWdDates = [];
 
+// PERBAIKAN UTAMA: Deklarasi variabel filter DOM sebagai Global Scope agar bisa dibaca semua fungsi
+let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, selPenerima, invFilterTglBayar, proofFilterTglWd;
+
 function fmtIDR(n){
   if(n===null||n===undefined||isNaN(n)||n==='') return 'Rp 0';
   return 'Rp ' + Math.round(Number(n)).toLocaleString('id-ID');
@@ -200,8 +203,6 @@ function badgeClass(status){
   if(!status) return '';
   return status.toString().toLowerCase().trim();
 }
-
-// AMANDEMEN UTAMA: Normalisasi string agar case-insensitive dan kebal dari bug spasi ganda ("LUSAN " === "lusan")
 function norm(s){ 
   return (s||'').toString().trim().toLowerCase().replace(/\s+/g, ' '); 
 }
@@ -259,13 +260,14 @@ function setupFiltersAndChips() {
     renderOverview();
   });
 
-  const feeFilterTglWd = document.getElementById('feeFilterTglWd');
-  const feeFilterRecipient = document.getElementById('feeFilterRecipient');
-  const payFilterTglWd = document.getElementById('payFilterTglWd');
-  const selTglWithdrawal = document.getElementById('filterTglWithdrawal');
-  const selPenerima = document.getElementById('filterPenerima');
-  const invFilterTglBayar = document.getElementById('invFilterTglBayar');
-  const proofFilterTglWd = document.getElementById('proofFilterTglWd');
+  // Alokasikan penargetan DOM ke variabel global (tanpa kata kunci let/const di dalam fungsi)
+  feeFilterTglWd = document.getElementById('feeFilterTglWd');
+  feeFilterRecipient = document.getElementById('feeFilterRecipient');
+  payFilterTglWd = document.getElementById('payFilterTglWd');
+  selTglWithdrawal = document.getElementById('filterTglWithdrawal');
+  selPenerima = document.getElementById('filterPenerima');
+  invFilterTglBayar = document.getElementById('invFilterTglBayar');
+  proofFilterTglWd = document.getElementById('proofFilterTglWd');
 
   feeFilterTglWd.innerHTML = '<option value="">Semua Tanggal</option>';
   payFilterTglWd.innerHTML = '<option value="">Semua Tanggal</option>';
@@ -282,10 +284,7 @@ function setupFiltersAndChips() {
     proofFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
   });
 
-  // Ambil data nama master penerima yang bersih dan unik dari RECIPIENT_MASTER
   const masterRecipients = [...new Set(DATA.recipients.map(r=>norm(r.recipient_name)).filter(Boolean))].sort();
-  
-  // Tampilkan teks dengan format nama kapital asli awal kalimat (Capitalize)
   masterRecipients.forEach(rawName => {
     const displayName = rawName.toUpperCase();
     feeFilterRecipient.innerHTML += `<option value="${rawName}">${displayName}</option>`;
@@ -295,14 +294,14 @@ function setupFiltersAndChips() {
   const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN']).filter(Boolean))].sort();
   invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
 
-  // Event Listeners for Filter Triggers
+  // Pasang Event Listeners ke Variabel Filter Global
   [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.addEventListener('change', renderFee));
   payFilterTglWd.addEventListener('change', renderPayment);
   [selTglWithdrawal, selPenerima].forEach(el=> el.addEventListener('change', renderWithdrawalTab));
   invFilterTglBayar.addEventListener('change', renderInvoice);
   proofFilterTglWd.addEventListener('change', renderProof);
 
-  // Resets
+  // Fungsi Reset Aksi Tombol
   document.getElementById('feeReset').addEventListener('click', ()=>{ feeFilterTglWd.value=''; feeFilterRecipient.value=''; renderFee(); });
   document.getElementById('payReset').addEventListener('click', ()=>{ payFilterTglWd.value=''; renderPayment(); });
   document.getElementById('resetFilters').addEventListener('click', ()=>{ selTglWithdrawal.value=''; selPenerima.value=''; renderWithdrawalTab(); });
@@ -590,6 +589,7 @@ function renderAll(){
   renderProof();
 }
 
+// Inisialisasi data dashboard pertama kali
 initDashboard();
 </script>
 </body>
