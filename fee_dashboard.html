@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Operational Fee Monitoring Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1115; --card:#181b22; --card2:#1f2330; --border:#2a2f3d;
+    --txt:#e8eaef; --muted:#8b92a5; --accent:#5b8def; --green:#3ddc97; --red:#ff6b6b; --amber:#ffb84d;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  header{padding:18px 16px 10px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border);}
+  header h1{font-size:17px;margin:0 0 2px;font-weight:700;}
+  header p{margin:0;font-size:12px;color:var(--muted);}
+  .tabs{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:var(--bg);position:sticky;top:54px;z-index:9;border-bottom:1px solid var(--border);}
+  .tab{flex:0 0 auto;padding:7px 12px;border-radius:20px;font-size:12.5px;background:var(--card);color:var(--muted);border:1px solid var(--border);white-space:nowrap;}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+  main{padding:14px 16px 40px;max-width:720px;margin:0 auto;}
+  .section{display:none;}
+  .section.active{display:block;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;}
+  .card .label{font-size:11.5px;color:var(--muted);margin-bottom:6px;}
+  .card .value{font-size:17px;font-weight:700;}
+  .card .value.green{color:var(--green);}
+  .card .value.red{color:var(--red);}
+  .card .value.amber{color:var(--amber);}
+  .card.full{grid-column:1/3;}
+  .section h2{font-size:14px;margin:18px 0 10px;color:var(--txt);}
+  .chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;}
+  .row-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;}
+  .row-card .top{display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:4px;}
+  .row-card .mid{font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;}
+  .badge.lunas, .badge.transferred, .badge.done, .badge.completed, .badge.balanced{background:rgba(61,220,151,0.15);color:var(--green);}
+  .badge.open, .badge.partial{background:rgba(255,184,77,0.15);color:var(--amber);}
+  .badge.belum, .badge.outstanding, .badge.overpaid{background:rgba(255,107,107,0.15);color:var(--red);}
+  .amount{font-weight:700;}
+  footer{text-align:center;color:var(--muted);font-size:11px;padding:20px 0;}
+  .filters{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:14px;}
+  .filters .frow{margin-bottom:10px;}
+  .filters .frow:last-child{margin-bottom:0;}
+  .filters label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .filters select{width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;}
+  .filters .freset{display:inline-block;margin-top:8px;font-size:11.5px;color:var(--accent);background:none;border:none;padding:0;}
+  .empty-state{text-align:center;color:var(--muted);font-size:12.5px;padding:18px 0;}
+  .proof-link{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:7px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--accent);font-size:12px;text-decoration:none;font-weight:600;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chip{display:flex;align-items:center;gap:6px;background:var(--card2);border:1px solid var(--border);border-radius:20px;padding:6px 10px;font-size:12px;cursor:pointer;}
+  .chip input{accent-color:var(--accent);}
+  .chip.checked{border-color:var(--accent);color:var(--accent);}
+  .filters-inline{display:flex;gap:6px;margin-top:4px;}
+  .filters-inline button{flex:1;background:var(--card2);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:5px;border-radius:8px;}
+  #loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,17,21,0.85);z-index:999;display:flex;justify-content:center;align-items:center;font-size:14px;font-weight:600;}
+</style>
+</head>
+<body>
+
+<div id="loading">Memuat data dari Google Sheets...</div>
+
+<header>
+  <h1>Operational Fee Monitoring</h1>
+  <p>Dashboard ringkasan fee, payment, withdrawal & transfer</p>
+</header>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-tab="overview">Overview</div>
+  <div class="tab" data-tab="fee">Fee</div>
+  <div class="tab" data-tab="payment">Payment</div>
+  <div class="tab" data-tab="withdrawal">Withdrawal</div>
+  <div class="tab" data-tab="invoice">Invoice</div>
+  <div class="tab" data-tab="proof">Bukti Transfer</div>
+</div>
+
+<main>
+  <section class="section active" id="overview">
+    <div class="filters">
+      <div class="frow">
+        <label>Tanggal Withdrawal (pilih filter)</label>
+        <div class="chips" id="ovWdChips"></div>
+        <div class="filters-inline">
+          <button id="ovSelectAll">Pilih Semua</button>
+          <button id="ovSelectNone">Kosongkan</button>
+        </div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card"><div class="label">Total Fee Entitlement</div><div class="value" id="ov-entitlement">-</div></div>
+      <div class="card"><div class="label">Total Fee Paid</div><div class="value green" id="ov-paid">-</div></div>
+      <div class="card"><div class="label">Outstanding Fee</div><div class="value amber" id="ov-outstanding">-</div></div>
+      <div class="card"><div class="label">Withdrawal Balance</div><div class="value" id="ov-balance">-</div></div>
+      <div class="card full"><div class="label">Total Withdrawal vs Total Transfer</div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <div><div class="value" id="ov-withdrawal" style="font-size:15px">-</div><div class="label">Withdrawal</div></div>
+          <div><div class="value" id="ov-transfer" style="font-size:15px">-</div><div class="label">Transfer</div></div>
+        </div>
+      </div>
+    </div>
+    <h2>Fee per Recipient</h2>
+    <div class="chart-wrap"><canvas id="chartRecipient" height="220"></canvas></div>
+    <h2>Status Pembayaran (Payment Batch)</h2>
+    <div class="chart-wrap"><canvas id="chartPayStatus" height="180"></canvas></div>
+  </section>
+
+  <section class="section" id="fee">
+    <div class="filters">
+      <div class="frow"><label>Tanggal Withdrawal</label><select id="feeFilterTglWd"><option value="">Semua Tanggal</option></select></div>
+      <div class="frow"><label>Penerima</label><select id="feeFilterRecipient"><option value="">Semua Penerima</option></select></div>
+      <button class="freset" id="feeReset">Reset filter</button>
+    </div>
+    <h2>Fee per Recipient</h2>
+    <div id="feeList"></div>
+  </section>
+
+  <section class="section" id="payment">
+    <div class="filters">
+      <div class="frow"><label>Periode Tanggal Withdrawal</label><select id="payFilterTglWd"><option value="">Semua Tanggal</option></select></div>
+      <button class="freset" id="payReset">Reset filter</button>
+    </div>
+    <h2>Payment Batch (WORK_PAYMENT_CALC)</h2>
+    <div id="paymentList"></div>
+  </section>
+
+  <section class="section" id="withdrawal">
+    <div class="filters">
+      <div class="frow"><label>Tanggal Withdrawal</label><select id="filterTglWithdrawal"><option value="">Semua Tanggal</option></select></div>
+      <div class="frow"><label>Penerima Fee</label><select id="filterPenerima"><option value="">Semua Penerima</option></select></div>
+      <button class="freset" id="resetFilters">Reset filter</button>
+    </div>
+    <h2>Withdrawal</h2>
+    <div id="withdrawalList"></div>
+    <h2>Riwayat Transfer</h2>
+    <div id="transferList"></div>
+  </section>
+
+  <section class="section" id="invoice">
+    <div class="filters">
+      <div class="frow"><label>Tanggal Pembayaran Invoice</label><select id="invFilterTglBayar"><option value="">Semua Tanggal</option></select></div>
+      <button class="freset" id="invReset">Reset filter</button>
+    </div>
+    <h2>Sales Invoice</h2>
+    <div id="invoiceList"></div>
+  </section>
+
+  <section class="section" id="proof">
+    <div class="filters">
+      <div class="frow"><label>Tanggal Withdrawal</label><select id="proofFilterTglWd"><option value="">Semua Tanggal</option></select></div>
+      <button class="freset" id="proofReset">Reset filter</button>
+    </div>
+    <h2>Bukti Transfer (Google Drive)</h2>
+    <div id="proofList"></div>
+  </section>
+</main>
+
+<footer>Operational Fee Monitoring System &middot; dynamic dashboard</footer>
+
+<script>
+// !!! GANTI DENGAN WEB APP URL ANDA DARI GOOGLE APPS SCRIPT !!!
+const API_URL = "https://script.google.com/macros/s/AKfycbzbbWyDy_euQmO2VDKlsr_1LzuBcnhP4UDg8nwl3jLBb55HTT4-e2hugA488450wO_Gcg/exec";
+
+let DATA = {};
+let chartRecipient, chartPayStatus;
+const wdIdToDate = {};
+
+// IDR Formatter
+function fmtIDR(n){
+  if(n===null||n===undefined||isNaN(n)||n==='') return 'Rp 0';
+  return 'Rp ' + Math.round(Number(n)).toLocaleString('id-ID');
+}
+function badgeClass(status){
+  if(!status) return '';
+  return status.toString().toLowerCase().trim();
+}
+function norm(s){ return (s||'').toString().trim(); }
+
+// Tab Navigation
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.tab).classList.add('active');
+  });
+});
+
+// Load Data from Google Sheet API
+async function initDashboard() {
+  try {
+    const res = await fetch(API_URL);
+    DATA = await res.json();
+    document.getElementById('loading').style.display = 'none';
+    
+    // Mapping internal WD ID ke Tanggal
+    DATA.withdrawals.forEach(w=>{ wdIdToDate[w.withdrawal_id] = w.withdrawal_date; });
+    
+    setupFiltersAndChips();
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    document.getElementById('loading').textContent = "Gagal memuat data. Periksa URL deployment Web App Anda.";
+  }
+}
+
+let allWdDates = [];
+function setupFiltersAndChips() {
+  allWdDates = [...new Set(DATA.withdrawals.map(w=>w.withdrawal_date).filter(Boolean))].sort();
+  
+  // Setup Chips Overview
+  const ovWdChipsEl = document.getElementById('ovWdChips');
+  ovWdChipsEl.innerHTML = '';
+  allWdDates.forEach(d=>{
+    ovWdChipsEl.innerHTML += `<label class="chip checked" data-date="${d}"><input type="checkbox" value="${d}" checked> ${d}</label>`;
+  });
+  
+  // Bind events for chips
+  ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      cb.closest('.chip').classList.toggle('checked', cb.checked);
+      renderOverview();
+    });
+  });
+
+  // Select All / None actions
+  document.getElementById('ovSelectAll').addEventListener('click', ()=>{
+    ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = true; cb.closest('.chip').classList.add('checked'); });
+    renderOverview();
+  });
+  document.getElementById('ovSelectNone').addEventListener('click', ()=>{
+    ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = false; cb.closest('.chip').classList.remove('checked'); });
+    renderOverview();
+  });
+
+  // Populate Dropdowns
+  const feeFilterTglWd = document.getElementById('feeFilterTglWd');
+  const feeFilterRecipient = document.getElementById('feeFilterRecipient');
+  const payFilterTglWd = document.getElementById('payFilterTglWd');
+  const selTglWithdrawal = document.getElementById('filterTglWithdrawal');
+  const selPenerima = document.getElementById('filterPenerima');
+  const invFilterTglBayar = document.getElementById('invFilterTglBayar');
+  const proofFilterTglWd = document.getElementById('proofFilterTglWd');
+
+  allWdDates.forEach(d=> {
+    feeFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
+    payFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
+    selTglWithdrawal.innerHTML += `<option value="${d}">${d}</option>`;
+    proofFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
+  });
+
+  DATA.fee_by_recipient.forEach(r=> feeFilterRecipient.innerHTML += `<option value="${norm(r.name)}">${r.name}</option>`);
+  
+  const penerimaSet = new Set();
+  DATA.transfers.forEach(t=>{ if(t.recipient_name) penerimaSet.add(norm(t.recipient_name)); });
+  [...penerimaSet].sort().forEach(name=>{ selPenerima.innerHTML += `<option value="${name}">${name}</option>`; });
+
+  const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN']).filter(Boolean))].sort();
+  invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
+
+  // Event Listeners for Filters
+  [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.addEventListener('change', renderFee));
+  payFilterTglWd.addEventListener('change', renderPayment);
+  [selTglWithdrawal, selPenerima].forEach(el=> el.addEventListener('change', renderWithdrawalTab));
+  invFilterTglBayar.addEventListener('change', renderInvoice);
+  proofFilterTglWd.addEventListener('change', renderProof);
+
+  // Resets
+  document.getElementById('feeReset').addEventListener('click', ()=>{ feeFilterTglWd.value=''; feeFilterRecipient.value=''; renderFee(); });
+  document.getElementById('payReset').addEventListener('click', ()=>{ payFilterTglWd.value=''; renderPayment(); });
+  document.getElementById('resetFilters').addEventListener('click', ()=>{ selTglWithdrawal.value=''; selPenerima.value=''; renderWithdrawalTab(); });
+  document.getElementById('invReset').addEventListener('click', ()=>{ invFilterTglBayar.value=''; renderInvoice(); });
+  document.getElementById('proofReset').addEventListener('click', ()=>{ proofFilterTglWd.value=''; renderProof(); });
+}
+
+function getOvSelectedDates(){
+  return new Set([...document.querySelectorAll('#ovWdChips input[type=checkbox]:checked')].map(c=>c.value));
+}
+
+// Helpers untuk filter relasi di overview
+function recipientNamesForWdDates(dateSet){
+  if(!dateSet || dateSet.size === 0) return new Set();
+  const wdIds = new Set(DATA.withdrawals.filter(w=>dateSet.has(w.withdrawal_date)).map(w=>w.withdrawal_id));
+  const batchIds = new Set(DATA.transfers.filter(t=>wdIds.has(t.withdrawal_id)).map(t=>t.payment_batch_id));
+  const names = new Set();
+  DATA.payments.forEach(p=>{ if(batchIds.has(p.payment_batch_id)) names.add(norm(p.recipient_name)); });
+  return names;
+}
+function batchIdsForWdDates(dateSet){
+  if(!dateSet || dateSet.size === 0) return new Set();
+  const wdIds = new Set(DATA.withdrawals.filter(w=>dateSet.has(w.withdrawal_date)).map(w=>w.withdrawal_id));
+  return new Set(DATA.transfers.filter(t=>wdIds.has(t.withdrawal_id)).map(t=>t.payment_batch_id));
+}
+
+function renderOverview(){
+  const selectedDates = getOvSelectedDates();
+  const isFiltered = selectedDates.size !== allWdDates.length;
+
+  const names = isFiltered ? recipientNamesForWdDates(selectedDates) : null;
+  const batchIds = isFiltered ? batchIdsForWdDates(selectedDates) : null;
+
+  const filteredFee = names ? DATA.fee_by_recipient.filter(r=>names.has(norm(r.name))) : DATA.fee_by_recipient;
+  const filteredPayments = batchIds ? DATA.payments.filter(p=>batchIds.has(p.payment_batch_id)) : DATA.payments;
+  const filteredWithdrawals = isFiltered ? DATA.withdrawals.filter(w=>selectedDates.has(w.withdrawal_date)) : DATA.withdrawals;
+  const wdIdsSel = new Set(filteredWithdrawals.map(w=>w.withdrawal_id));
+  const filteredTransfers = isFiltered ? DATA.transfers.filter(t=>wdIdsSel.has(t.withdrawal_id)) : DATA.transfers;
+
+  const total_entitlement = filteredFee.reduce((s,r)=>s+Number(r.amount),0);
+  const total_withdrawal = filteredWithdrawals.reduce((s,w)=>s+Number(w.withdrawal_amount),0);
+  const total_transfer = filteredTransfers.reduce((s,t)=>s+Number(t.transfer_amount || t.amount || 0),0);
+  const withdrawal_balance = total_withdrawal - total_transfer;
+
+  document.getElementById('ov-entitlement').textContent = fmtIDR(total_entitlement);
+  document.getElementById('ov-paid').textContent = fmtIDR(total_transfer);
+  document.getElementById('ov-outstanding').textContent = fmtIDR(Math.max(0, total_entitlement - total_transfer));
+  document.getElementById('ov-balance').textContent = fmtIDR(withdrawal_balance);
+  document.getElementById('ov-withdrawal').textContent = fmtIDR(total_withdrawal);
+  document.getElementById('ov-transfer').textContent = fmtIDR(total_transfer);
+
+  // Render Bar Chart
+  if(chartRecipient) chartRecipient.destroy();
+  chartRecipient = new Chart(document.getElementById('chartRecipient'), {
+    type: 'bar',
+    data: {
+      labels: filteredFee.map(r=>r.name),
+      datasets: [{ data: filteredFee.map(r=>r.amount), backgroundColor: '#5b8def', borderRadius: 6 }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display:false } },
+      scales: {
+        x: { ticks: { color:'#8b92a5', callback:(v)=> (v/1e6).toFixed(0)+'jt' }, grid:{color:'#2a2f3d'} },
+        y: { ticks: { color:#e8eaef', font:{size:11} }, grid:{display:false} }
+      }
+    }
+  });
+
+  // Render Doughnut Chart
+  const payStatusCounts = {};
+  filteredPayments.forEach(p=>{
+    const s = p.status || 'OPEN';
+    payStatusCounts[s] = (payStatusCounts[s]||0) + Number(p.net_amount || 0);
+  });
+  if(chartPayStatus) chartPayStatus.destroy();
+  chartPayStatus = new Chart(document.getElementById('chartPayStatus'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(payStatusCounts),
+      datasets: [{ data: Object.values(payStatusCounts), backgroundColor: ['#3ddc97','#ffb84d','#ff6b6b','#5b8def'] }]
+    },
+    options: { plugins: { legend: { position:'bottom', labels:{ color:'#e8eaef', font:{size:11} } } } }
+  });
+}
+
+function renderFee(){
+  const tglWd = document.getElementById('feeFilterTglWd').value;
+  const recipient = document.getElementById('feeFilterRecipient').value;
+  const names = tglWd ? recipientNamesForWdDates(new Set([tglWd])) : null;
+
+  let filtered = names ? DATA.fee_by_recipient.filter(r=>names.has(norm(r.name))) : DATA.fee_by_recipient;
+  if(recipient) filtered = filtered.filter(r=>norm(r.name)===recipient);
+
+  const feeListEl = document.getElementById('feeList');
+  feeListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data untuk filter ini</div>';
+  filtered.forEach(r=>{
+    feeListEl.innerHTML += `<div class="row-card"><div class="top"><span>${r.name}</span><span class="amount">${fmtIDR(r.amount)}</span></div></div>`;
+  });
+}
+
+function renderPayment(){
+  const tglWd = document.getElementById('payFilterTglWd').value;
+  const batchIds = tglWd ? batchIdsForWdDates(new Set([tglWd])) : null;
+  const filtered = batchIds ? DATA.payments.filter(p=>batchIds.has(p.payment_batch_id)) : DATA.payments;
+
+  const paymentListEl = document.getElementById('paymentList');
+  paymentListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data untuk filter ini</div>';
+  filtered.forEach(p=>{
+    paymentListEl.innerHTML += `
+      <div class="row-card">
+        <div class="top"><span>${p.recipient_name||''}</span><span class="badge ${badgeClass(p.status)}">${p.status||'OPEN'}</span></div>
+        <div class="mid">${p.payment_batch_id||''} &middot; ${p.invoice_count||0} Invoices &middot; ${p.tax_method||''}</div>
+        <div class="top"><span style="font-weight:400;color:#8b92a5;">Net Amount</span><span class="amount">${fmtIDR(p.net_amount)}</span></div>
+      </div>`;
+  });
+}
+
+function renderWithdrawalTab(){
+  const tglWd = document.getElementById('filterTglWithdrawal').value;
+  const penerima = document.getElementById('filterPenerima').value;
+
+  const filteredWd = DATA.withdrawals.filter(w=> !tglWd || w.withdrawal_date === tglWd);
+  const wdListEl = document.getElementById('withdrawalList');
+  wdListEl.innerHTML = filteredWd.length ? '' : '<div class="empty-state">Tidak ada data withdrawal</div>';
+  filteredWd.forEach(w=>{
+    wdListEl.innerHTML += `
+      <div class="row-card">
+        <div class="top"><span>${w.withdrawal_id}</span><span class="badge ${badgeClass(w.reconciliation_status)}">${w.reconciliation_status||'OPEN'}</span></div>
+        <div class="mid">${w.withdrawal_date} &middot; ${w.description||''}</div>
+        <div class="top"><span style="font-weight:400;color:#8b92a5;">Amount</span><span class="amount">${fmtIDR(w.withdrawal_amount)}</span></div>
+      </div>`;
+  });
+
+  const filteredTr = DATA.transfers.filter(t=>{
+    const wDate = wdIdToDate[t.withdrawal_id];
+    if(tglWd && wDate !== tglWd) return false;
+    if(penerima && norm(t.recipient_name) !== penerima) return false;
+    return true;
+  });
+  const trListEl = document.getElementById('transferList');
+  trListEl.innerHTML = filteredTr.length ? '' : '<div class="empty-state">Tidak ada data transfer</div>';
+  filteredTr.forEach(t=>{
+    trListEl.innerHTML += `
+      <div class="row-card">
+        <div class="top"><span>${t.recipient_name||''}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
+        <div class="mid">${t.transfer_date||''} &middot; WD: ${t.withdrawal_id}</div>
+      </div>`;
+  });
+}
+
+function renderInvoice(){
+  const tgl = document.getElementById('invFilterTglBayar').value;
+  const filtered = tgl ? DATA.invoices.filter(i=>i['TANGGAL PEMBAYARAN']===tgl) : DATA.invoices;
+  const invListEl = document.getElementById('invoiceList');
+  invListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
+  filtered.forEach(i=>{
+    invListEl.innerHTML += `
+      <div class="row-card">
+        <div class="top"><span>${i.invoice_number}</span><span class="badge ${badgeClass(i.STATUS)}">${i.STATUS}</span></div>
+        <div class="mid">${i['NAMA PT']} &middot; ${i['NAMA KAPAL']}</div>
+        <div class="top"><span style="font-weight:400;color:#8b92a5;">Total</span><span class="amount">${fmtIDR(i['TOTAL INVOICE'])}</span></div>
+      </div>`;
+  });
+}
+
+function renderProof(){
+  const tgl = document.getElementById('proofFilterTglWd').value;
+  const filtered = tgl ? DATA.transfers.filter(t=>wdIdToDate[t.withdrawal_id]===tgl) : DATA.transfers;
+  const proofListEl = document.getElementById('proofList');
+  proofListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
+  filtered.forEach(t=>{
+    const url = t.transfer_proof_file_url || t.transfer_proof_url || '';
+    const name = t.transfer_proof_file_name || t.transfer_proof_name || 'Lihat Bukti';
+    proofListEl.innerHTML += `
+      <div class="row-card">
+        <div class="top"><span>${t.recipient_name||''}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
+        <div class="mid">${t.transfer_date || ''}</div>
+        ${url ? `<a class="proof-link" href="${url.trim()}" target="_blank">📎 ${name}</a>` : '<div class="mid">Tidak ada bukti</div>'}
+      </div>`;
+  });
+}
+
+function renderAll(){
+  renderOverview();
+  renderFee();
+  renderPayment();
+  renderWithdrawalTab();
+  renderInvoice();
+  renderProof();
+}
+
+// Jalankan inisialisasi dashboard
+initDashboard();
+</script>
+</body>
+</html>
