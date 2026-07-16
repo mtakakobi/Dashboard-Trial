@@ -276,10 +276,13 @@ function setupFiltersAndChips() {
     proofFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
   });
 
-  DATA.fee_by_recipient.forEach(r=> feeFilterRecipient.innerHTML += `<option value="${norm(r.name)}">${r.name}</option>`);
-  const penerimaSet = new Set();
-  DATA.transfers.forEach(t=>{ if(t.recipient_name) penerimaSet.add(norm(t.recipient_name)); });
-  [...penerimaSet].sort().forEach(name=>{ selPenerima.innerHTML += `<option value="${name}">${name}</option>`; });
+  // PERBAIKAN UTAMA: Mengambil seluruh master nama penerima dari array recipients
+  const masterRecipients = [...new Set(DATA.recipients.map(r=>norm(r.recipient_name)).filter(Boolean))].sort();
+  
+  masterRecipients.forEach(name => {
+    feeFilterRecipient.innerHTML += `<option value="${name}">${name}</option>`;
+    selPenerima.innerHTML += `<option value="${name}">${name}</option>`;
+  });
 
   const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN']).filter(Boolean))].sort();
   invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
@@ -459,16 +462,16 @@ const formStructures = {
   "WITHDRAWAL_MASTER": [
     { label: "Withdrawal ID (Contoh: WD-00003)", name: "withdrawal_id", type: "text", required: true },
     { label: "Tanggal Penarikan (YYYY-MM-DD)", name: "withdrawal_date", type: "date", required: true },
-    { label: "Nilai Penarikan ", name: "withdrawal_amount", type: "number", required: true },
+    { label: "Nilai Penarikan (Angka murni)", name: "withdrawal_amount", type: "number", required: true },
     { label: "Keterangan / Deskripsi", name: "description", type: "text", required: false },
     { label: "Status Rekonsiliasi", name: "reconciliation_status", type: "select", options: ["OPEN", "PARTIAL", "BALANCED", "OVERPAID"], required: true }
   ],
   "TRANSFER_DETAIL": [
     { label: "Transfer ID (Contoh: TR-2026-00017)", name: "transfer_id", type: "text", required: true },
-    { label: "Withdrawal ID (Pilih ID dari Master)", name: "withdrawal_id", type: "select_wd", required: true }, // Menggunakan tipe khusus select_wd
+    { label: "Withdrawal ID (Pilih ID dari Master)", name: "withdrawal_id", type: "select_wd", required: true },
     { label: "Payment Batch ID", name: "payment_batch_id", type: "text", required: true },
-    { label: "Nama Penerima Fee", name: "recipient_name", type: "text", required: true },
-    { label: "Nilai Transfer ", name: "transfer_amount", type: "number", required: true },
+    { label: "Nama Penerima Fee", name: "recipient_name", type: "select_recipient", required: true }, // Menggunakan tipe select_recipient baru
+    { label: "Nilai Transfer (Angka murni)", name: "transfer_amount", type: "number", required: true },
     { label: "Tanggal Transfer (YYYY-MM-DD)", name: "transfer_date", type: "date", required: true },
     { label: "Nama File Bukti Transfer", name: "transfer_proof_file_name", type: "text", required: false },
     { label: "Link URL Bukti Transfer (GDrive)", name: "transfer_proof_file_url", type: "url", required: false },
@@ -497,10 +500,15 @@ typeSelector.addEventListener('change', function() {
       let optionsHtml = f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
       inputHtml = `<select name="${f.name}" ${f.required ? 'required' : ''}>${optionsHtml}</select>`;
     } else if (f.type === 'select_wd') {
-      // Mengubah kolom teks withdrawal_id menjadi dropdown dinamis yang mengambil data dari DATA.withdrawals
       const wdOptions = [...new Set(DATA.withdrawals.map(w => w.withdrawal_id).filter(Boolean))].sort();
       let optionsHtml = '<option value="">-- Pilih Withdrawal ID --</option>';
       optionsHtml += wdOptions.map(id => `<option value="${id}">${id}</option>`).join('');
+      inputHtml = `<select name="${f.name}" ${f.required ? 'required' : ''}>${optionsHtml}</select>`;
+    } else if (f.type === 'select_recipient') {
+      // Dropdown penerima baru di menu New Entry mengambil dari master recipients global
+      const rOptions = [...new Set(DATA.recipients.map(r => norm(r.recipient_name)).filter(Boolean))].sort();
+      let optionsHtml = '<option value="">-- Pilih Penerima --</option>';
+      optionsHtml += rOptions.map(name => `<option value="${name}">${name}</option>`).join('');
       inputHtml = `<select name="${f.name}" ${f.required ? 'required' : ''}>${optionsHtml}</select>`;
     } else {
       inputHtml = `<input type="${f.type}" name="${f.name}" placeholder="Masukkan data..." ${f.required ? 'required' : ''} style="width:100%; background:var(--card2); color:var(--txt); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:13px;">`;
