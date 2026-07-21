@@ -128,7 +128,6 @@
   <section class="section" id="withdrawal">
     <div class="filters">
       <div class="frow"><label>Tanggal Withdrawal</label><select id="filterTglWithdrawal"><option value="">Semua Tanggal</option></select></div>
-      <div class="frow"><label>Penerima Fee</label><select id="filterPenerima"><option value="">Semua Penerima</option></select></div>
       <button class="freset" id="resetFilters">Reset filter</button>
     </div>
     <h2>Withdrawal</h2>
@@ -193,7 +192,7 @@ const wdIdToDate = {};
 let allWdDates = [];
 
 // Variabel Global Filter DOM
-let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, selPenerima, invFilterTglBayar, proofFilterTglWd;
+let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, invFilterTglBayar, proofFilterTglWd;
 
 function fmtIDR(n){
   if(n===null||n===undefined||isNaN(n)||n==='') return 'Rp 0';
@@ -267,7 +266,6 @@ function setupFiltersAndChips() {
   feeFilterRecipient = document.getElementById('feeFilterRecipient');
   payFilterTglWd = document.getElementById('payFilterTglWd');
   selTglWithdrawal = document.getElementById('filterTglWithdrawal');
-  selPenerima = document.getElementById('filterPenerima');
   invFilterTglBayar = document.getElementById('invFilterTglBayar');
   proofFilterTglWd = document.getElementById('proofFilterTglWd');
 
@@ -276,7 +274,6 @@ function setupFiltersAndChips() {
   selTglWithdrawal.innerHTML = '<option value="">Semua Tanggal</option>';
   proofFilterTglWd.innerHTML = '<option value="">Semua Tanggal</option>';
   feeFilterRecipient.innerHTML = '<option value="">Semua Penerima</option>';
-  selPenerima.innerHTML = '<option value="">Semua Penerima</option>';
   invFilterTglBayar.innerHTML = '<option value="">Semua Tanggal</option>';
 
   allWdDates.forEach(d=> {
@@ -291,7 +288,6 @@ function setupFiltersAndChips() {
   activeRecipients.forEach(rawName => {
     const displayName = rawName.toUpperCase();
     feeFilterRecipient.innerHTML += `<option value="${rawName}">${displayName}</option>`;
-    selPenerima.innerHTML += `<option value="${rawName}">${displayName}</option>`;
   });
 
   const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN']).filter(Boolean))].sort();
@@ -300,14 +296,14 @@ function setupFiltersAndChips() {
   // Daftarkan Event Listener
   [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.addEventListener('change', renderFee));
   payFilterTglWd.addEventListener('change', renderPayment);
-  [selTglWithdrawal, selPenerima].forEach(el=> el.addEventListener('change', renderWithdrawalTab));
+  selTglWithdrawal.addEventListener('change', renderWithdrawalTab);
   invFilterTglBayar.addEventListener('change', renderInvoice);
   proofFilterTglWd.addEventListener('change', renderProof);
 
   // Fungsi Reset
   document.getElementById('feeReset').addEventListener('click', ()=>{ feeFilterTglWd.value=''; feeFilterRecipient.value=''; renderFee(); });
   document.getElementById('payReset').addEventListener('click', ()=>{ payFilterTglWd.value=''; renderPayment(); });
-  document.getElementById('resetFilters').addEventListener('click', ()=>{ selTglWithdrawal.value=''; selPenerima.value=''; renderWithdrawalTab(); });
+  document.getElementById('resetFilters').addEventListener('click', ()=>{ selTglWithdrawal.value=''; renderWithdrawalTab(); });
   document.getElementById('invReset').addEventListener('click', ()=>{ invFilterTglBayar.value=''; renderInvoice(); });
   document.getElementById('proofReset').addEventListener('click', ()=>{ proofFilterTglWd.value=''; renderProof(); });
 }
@@ -429,23 +425,12 @@ function renderPayment(){
   });
 }
 
-// AMANDEMEN LOGIKA UTAMA: Saling menyaring multi-kondisi antar tabel secara paralel (CORS & Relation Cross-match)
 function renderWithdrawalTab(){
   const tglWd = selTglWithdrawal.value;
-  const penerima = selPenerima.value;
 
-  // Lacak daftar Withdrawal ID yang terkait dengan Penerima yang sedang dipilih di dropdown
-  const validWdIdsForRecipient = new Set();
-  DATA.transfers.forEach(t => {
-    if (!penerima || norm(t.recipient_name) === penerima) {
-      validWdIdsForRecipient.add(t.withdrawal_id);
-    }
-  });
-
-  // 1. Saring Data Withdrawal di Atas
+  // 1. Saring Data Withdrawal
   const filteredWd = DATA.withdrawals.filter(w => {
     if (tglWd && w.withdrawal_date !== tglWd) return false;
-    if (penerima && !validWdIdsForRecipient.has(w.withdrawal_id)) return false; // Ikut mengecil jika nama di bawah dipilih
     return true;
   });
 
@@ -460,11 +445,10 @@ function renderWithdrawalTab(){
       </div>`;
   });
 
-  // 2. Saring Data Riwayat Transfer di Bawah
+  // 2. Saring Data Riwayat Transfer
   const filteredTr = DATA.transfers.filter(t => {
     const wDate = wdIdToDate[t.withdrawal_id];
     if (tglWd && wDate !== tglWd) return false;
-    if (penerima && norm(t.recipient_name) !== penerima) return false;
     return true;
   });
 
