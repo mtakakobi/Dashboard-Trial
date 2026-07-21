@@ -16,7 +16,7 @@
   header h1{font-size:17px;margin:0 0 2px;font-weight:700;}
   header p{margin:0;font-size:12px;color:var(--muted);}
   .tabs{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;background:var(--bg);position:sticky;top:54px;z-index:9;border-bottom:1px solid var(--border);}
-  .tab{flex:0 0 auto;padding:7px 12px;border-radius:20px;font-size:12.5px;background:var(--card);color:var(--muted);border:1px solid var(--border);white-space:nowrap;}
+  .tab{flex:0 0 auto;padding:7px 12px;border-radius:20px;font-size:12.5px;background:var(--card);color:var(--muted);border:1px solid var(--border);white-space:nowrap;cursor:pointer;}
   .tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
   main{padding:14px 16px 40px;max-width:720px;margin:0 auto;opacity: 0;transition: opacity 0.2s ease-in-out;}
   .section{display:none;}
@@ -45,7 +45,7 @@
   .filters .frow:last-child{margin-bottom:0;}
   .filters label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px;}
   .filters select{width:100%;background:var(--card2);color:var(--txt);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:13px;}
-  .filters .freset{display:inline-block;margin-top:8px;font-size:11.5px;color:var(--accent);background:none;border:none;padding:0;}
+  .filters .freset{display:inline-block;margin-top:8px;font-size:11.5px;color:var(--accent);background:none;border:none;padding:0;cursor:pointer;}
   .empty-state{text-align:center;color:var(--muted);font-size:12.5px;padding:18px 0;}
   .proof-link{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:7px 12px;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--accent);font-size:12px;text-decoration:none;font-weight:600;}
   .chips{display:flex;flex-wrap:wrap;gap:6px;}
@@ -53,7 +53,7 @@
   .chip input{accent-color:var(--accent);}
   .chip.checked{border-color:var(--accent);color:var(--accent);}
   .filters-inline{display:flex;gap:6px;margin-top:4px;}
-  .filters-inline button{flex:1;background:var(--card2);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:5px;border-radius:8px;}
+  .filters-inline button{flex:1;background:var(--card2);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:5px;border-radius:8px;cursor:pointer;}
   #loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,17,21,0.85);z-index:999;display:flex;justify-content:center;align-items:center;font-size:14px;font-weight:600;}
 </style>
 </head>
@@ -73,7 +73,6 @@
   <div class="tab" data-tab="withdrawal">Withdrawal</div>
   <div class="tab" data-tab="invoice">Invoice</div>
   <div class="tab" data-tab="proof">Bukti Transfer</div>
-  <div class="tab" data-tab="input-data">New Entry</div>
 </div>
 
 <main id="mainContainer">
@@ -152,32 +151,6 @@
     </div>
     <h2>Bukti Transfer (Google Drive)</h2>
     <div id="proofList"></div>
-  </section>
-
-  <section class="section" id="input-data">
-    <div class="filters">
-      <h2>Tambah Transaksi Baru</h2>
-      <p style="font-size: 12px; color: var(--muted); margin-top: -6px; margin-bottom: 16px;">
-        Pilih jenis data untuk memuat formulir input ke Google Sheets.
-      </p>
-      
-      <div class="frow">
-        <label>Pilih Kategori Data</label>
-        <select id="inputTypeSelector">
-          <option value="">-- Pilih Kategori --</option>
-          <option value="WITHDRAWAL_MASTER">Withdrawal Baru (WITHDRAWAL_MASTER)</option>
-          <option value="TRANSFER_DETAIL">Riwayat Transfer Baru (TRANSFER_DETAIL)</option>
-        </select>
-      </div>
-      
-      <form id="dynamicInputForm" style="display: none; margin-top: 16px;">
-        <input type="hidden" name="target_sheet" id="targetSheetHidden">
-        <div id="formFieldsContainer"></div>
-        <button type="submit" id="btnSubmitForm" style="width: 100%; background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 10px; font-weight: bold; cursor: pointer; margin-top: 10px;">
-          Simpan Data ke Google Sheets
-        </button>
-      </form>
-    </div>
   </section>
 </main>
 
@@ -494,107 +467,6 @@ function renderProof(){
       </div>`;
   });
 }
-
-// =================== DYNAMIC FORM LOGIC ===================
-const formStructures = {
-  "WITHDRAWAL_MASTER": [
-    { label: "Withdrawal ID (Contoh: WD-00003)", name: "withdrawal_id", type: "text", required: true },
-    { label: "Tanggal Penarikan (YYYY-MM-DD)", name: "withdrawal_date", type: "date", required: true },
-    { label: "Nilai Penarikan (Angka murni)", name: "withdrawal_amount", type: "number", required: true },
-    { label: "Keterangan / Deskripsi", name: "description", type: "text", required: false },
-    { label: "Status Rekonsiliasi", name: "reconciliation_status", type: "select", options: ["OPEN", "PARTIAL", "BALANCED", "OVERPAID"], required: true }
-  ],
-  "TRANSFER_DETAIL": [
-    { label: "Transfer ID (Contoh: TR-2026-00017)", name: "transfer_id", type: "text", required: true },
-    { label: "Withdrawal ID (Pilih ID dari Master)", name: "withdrawal_id", type: "select_wd", required: true },
-    { label: "Payment Batch ID", name: "payment_batch_id", type: "text", required: true },
-    { label: "Nama Penerima Fee", name: "recipient_name", type: "select_recipient", required: true },
-    { label: "Nilai Transfer (Angka murni)", name: "transfer_amount", type: "number", required: true },
-    { label: "Tanggal Transfer (YYYY-MM-DD)", name: "transfer_date", type: "date", required: true },
-    { label: "Nama File Bukti Transfer", name: "transfer_proof_file_name", type: "text", required: false },
-    { label: "Link URL Bukti Transfer (GDrive)", name: "transfer_proof_file_url", type: "url", required: false },
-    { label: "Catatan Tambahan (Remarks)", name: "remarks", type: "text", required: false }
-  ]
-};
-
-const typeSelector = document.getElementById('inputTypeSelector');
-const dynamicForm = document.getElementById('dynamicInputForm');
-const fieldsContainer = document.getElementById('formFieldsContainer');
-const targetSheetHidden = document.getElementById('targetSheetHidden');
-
-typeSelector.addEventListener('change', function() {
-  const selectedType = this.value;
-  fieldsContainer.innerHTML = '';
-  if (!selectedType) {
-    dynamicForm.style.display = 'none';
-    return;
-  }
-  
-  targetSheetHidden.value = selectedType;
-  formStructures[selectedType].forEach(f => {
-    let inputHtml = '';
-    
-    if (f.type === 'select') {
-      let optionsHtml = f.options.map(opt => `<option value="${opt}">${opt}</option>`).join('');
-      inputHtml = `<select name="${f.name}" ${f.required ? 'required' : ''}>${optionsHtml}</select>`;
-    } else if (f.type === 'select_wd') {
-      const wdOptions = [...new Set(DATA.withdrawals.map(w => w.withdrawal_id).filter(Boolean))].sort();
-      let optionsHtml = '<option value="">-- Pilih Withdrawal ID --</option>';
-      optionsHtml += wdOptions.map(id => `<option value="${id}">${id}</option>`).join('');
-      inputHtml = `<select name="${f.name}" ${f.required ? 'required' : ''}>${optionsHtml}</select>`;
-    } else if (f.type === 'select_recipient') {
-      const rOptions = [...new Set(DATA.recipients.map(r => norm(r.recipient_name)).filter(Boolean))].sort();
-      let optionsHtml = '<option value="">-- Pilih Penerima --</option>';
-      optionsHtml += rOptions.map(name => `<option value="${name}">${name.toUpperCase()}</option>`).join('');
-      inputHtml = `<select name="${f.name}" ${f.required ? 'required' : ''}>${optionsHtml}</select>`;
-    } else {
-      inputHtml = `<input type="${f.type}" name="${f.name}" placeholder="Masukkan data..." ${f.required ? 'required' : ''} style="width:100%; background:var(--card2); color:var(--txt); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:13px;">`;
-    }
-    
-    fieldsContainer.innerHTML += `
-      <div class="frow">
-        <label>${f.label} ${f.required ? '<span style="color:var(--red)">*</span>' : ''}</label>
-        ${inputHtml}
-      </div>`;
-  });
-  dynamicForm.style.display = 'block';
-});
-
-dynamicForm.addEventListener('submit', function(e) {
-  e.preventDefault();
-  
-  document.getElementById('loading').style.display = 'flex';
-  document.getElementById('loading').textContent = "Mengirim data ke Google Sheets...";
-  
-  const formData = new FormData(dynamicForm);
-  const searchParams = new URLSearchParams();
-  for (const pair of formData.entries()) {
-    searchParams.append(pair[0], pair[1]);
-  }
-  
-  fetch(API_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: searchParams.toString()
-  })
-  .then(() => {
-    alert("Data Berhasil Dikirim ke Google Sheets!");
-    dynamicForm.reset();
-    dynamicForm.style.display = 'none';
-    typeSelector.value = '';
-    
-    document.getElementById('loading').textContent = "Memperbarui data dashboard...";
-    setTimeout(initDashboard, 2500);
-  })
-  .catch(err => {
-    console.error(err);
-    alert("Terjadi gangguan saat mengirim data.");
-    document.getElementById('loading').style.display = 'none';
-  });
-});
 
 function renderAll(){
   renderOverview();
