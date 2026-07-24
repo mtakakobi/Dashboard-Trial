@@ -117,7 +117,6 @@
   .section{display:none;}
   .section.active{display:block;}
   
-  /* FLUID TOP GRID LAYOUT (Auto-adapts laptop widescreen vs phone portrait) */
   .overview-top-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(clamp(280px, 45%, 480px), 1fr));
@@ -140,7 +139,6 @@
     align-self: flex-start;
   }
 
-  /* Fluid Metrics 2x2 Grid inside top container */
   .overview-metrics-col {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -196,9 +194,10 @@
   .legend-dot.green { background: var(--green); }
   .legend-dot.blue { background: var(--accent); opacity: 0.8; }
 
-  /* Recipient Progress Cards Fluid Layout */
+  /* Recipient Progress Cards */
   .recipient-progress-card { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: clamp(10px, 1.5vw, 14px); margin-bottom: 10px; transition: background 0.3s ease, border-color 0.3s ease; }
-  .recipient-progress-card.has-overpaid { border-color: rgba(255, 184, 77, 0.4); }
+  .recipient-progress-card.has-overpaid { border-left: 3px solid var(--amber); }
+  .recipient-progress-card.has-outstanding { border-left: 3px solid var(--red); }
   .recipient-progress-card:last-child { margin-bottom: 0; }
   .recipient-progress-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: clamp(12px, 1.5vw, 13.5px); margin-bottom: 8px; }
   .recipient-progress-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; margin-top: 8px; font-size: clamp(10.5px, 1.2vw, 12px); color: var(--muted); }
@@ -257,9 +256,7 @@
       </div>
     </div>
 
-    <!-- FLUID 2-COLUMN / 1-COLUMN GRID BELOW FILTER -->
     <div class="overview-top-grid">
-      <!-- Doughnut Chart Container -->
       <div class="card overview-chart-card">
         <h3>Status Pembayaran</h3>
         <div style="width:100%; height:clamp(160px, 20vh, 210px); position:relative; display:flex; justify-content:center; align-items:center;">
@@ -267,7 +264,6 @@
         </div>
       </div>
 
-      <!-- Fluid Metrics Grid -->
       <div class="overview-metrics-col">
         <div class="card"><div class="label">Total Fee Entitlement</div><div class="value" id="ov-entitlement">-</div></div>
         <div class="card"><div class="label">Total Fee Paid</div><div class="value green" id="ov-paid">-</div></div>
@@ -276,7 +272,6 @@
       </div>
     </div>
 
-    <!-- Total Withdrawal vs Total Transfer Bar -->
     <div class="card full" style="margin-bottom:16px;">
       <div class="progress-card-header">
         <div>
@@ -306,7 +301,6 @@
       </div>
     </div>
 
-    <!-- Progress Pembayaran Fee per Recipient -->
     <h2>Progress Pembayaran Fee per Recipient</h2>
     <div class="chart-wrap" id="recipientProgressList"></div>
   </section>
@@ -372,7 +366,6 @@ let allWdDates = [];
 
 let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, invFilterTglBayar, proofFilterTglWd;
 
-// Theme Toggle Logic
 const themeToggleBtn = document.getElementById('themeToggle');
 const themeIcon = document.getElementById('themeIcon');
 const themeText = document.getElementById('themeText');
@@ -603,6 +596,19 @@ function renderOverview(){
 
   const recipientList = Object.values(recipientDataMap);
 
+  // RE-ORDERING LOGIC: Sort strictly by raw magnitude of difference (|Paid Fee - Total Fee|)
+  recipientList.sort((a, b) => {
+    const absDiffA = Math.abs(a.paidFee - a.totalFee);
+    const absDiffB = Math.abs(b.paidFee - b.totalFee);
+
+    // Largest numerical gap or surplus moves to the top
+    if (absDiffB !== absDiffA) {
+      return absDiffB - absDiffA;
+    }
+
+    return a.name.localeCompare(b.name);
+  });
+
   const progressListEl = document.getElementById('recipientProgressList');
   progressListEl.innerHTML = '';
 
@@ -611,9 +617,10 @@ function renderOverview(){
   } else {
     recipientList.forEach(r => {
       const diff = r.paidFee - r.totalFee;
-      const isOverpaid = diff > 0;
+      const isOverpaid = diff > 1;
       const outstanding = Math.max(0, r.totalFee - r.paidFee);
       const isSettled = outstanding === 0 && !isOverpaid;
+      const hasOutstanding = outstanding > 1;
       
       const pctPaid = r.totalFee > 0 ? Math.min(100, (r.paidFee / r.totalFee) * 100) : (r.paidFee > 0 ? 100 : 0);
 
@@ -631,7 +638,7 @@ function renderOverview(){
         : `Outstanding: <strong style="color:${isSettled ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(outstanding)}</strong>`;
 
       progressListEl.innerHTML += `
-        <div class="recipient-progress-card ${isOverpaid ? 'has-overpaid' : ''}">
+        <div class="recipient-progress-card ${hasOutstanding ? 'has-outstanding' : ''} ${isOverpaid ? 'has-overpaid' : ''}">
           <div class="recipient-progress-header">
             <span>${r.name}</span>
             ${statusBadge}
