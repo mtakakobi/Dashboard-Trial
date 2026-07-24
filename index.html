@@ -1,3 +1,6 @@
+Here is the updated HTML file with the fixes applied directly:
+
+```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -168,13 +171,25 @@ let allWdDates = [];
 let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, invFilterTglBayar, proofFilterTglWd;
 
 function fmtIDR(n){
-  if(n===null||n===undefined||isNaN(n)||n==='') return 'Rp 0';
-  return 'Rp ' + Math.round(Number(n)).toLocaleString('id-ID');
+  if(n === null || n === undefined || n === '') return 'Rp 0';
+  
+  // Handled formatted string inputs like "Rp 15.000.000" or "15.000,00"
+  if(typeof n === 'string'){
+    const cleaned = n.replace(/[^0-9]/g, '');
+    n = cleaned ? Number(cleaned) : 0;
+  }
+  
+  const num = Number(n);
+  if(isNaN(num)) return 'Rp 0';
+  
+  return 'Rp ' + Math.round(num).toLocaleString('id-ID');
 }
+
 function badgeClass(status){
   if(!status) return '';
   return status.toString().toLowerCase().trim();
 }
+
 function norm(s){ 
   return (s||'').toString().trim().toLowerCase().replace(/\s+/g, ' '); 
 }
@@ -263,7 +278,7 @@ function setupFiltersAndChips() {
     feeFilterRecipient.innerHTML += `<option value="${rawName}">${displayName}</option>`;
   });
 
-  const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN']).filter(Boolean))].sort();
+  const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN'] || i['tanggal_pembayaran']).filter(Boolean))].sort();
   invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
 
   // Daftarkan Event Listener
@@ -401,7 +416,6 @@ function renderPayment(){
 function renderWithdrawalTab(){
   const tglWd = selTglWithdrawal.value;
 
-  // 1. Saring Data Withdrawal
   const filteredWd = DATA.withdrawals.filter(w => {
     if (tglWd && w.withdrawal_date !== tglWd) return false;
     return true;
@@ -418,7 +432,6 @@ function renderWithdrawalTab(){
       </div>`;
   });
 
-  // 2. Saring Data Riwayat Transfer
   const filteredTr = DATA.transfers.filter(t => {
     const wDate = wdIdToDate[t.withdrawal_id];
     if (tglWd && wDate !== tglWd) return false;
@@ -438,15 +451,23 @@ function renderWithdrawalTab(){
 
 function renderInvoice(){
   const tgl = invFilterTglBayar.value;
-  const filtered = tgl ? DATA.invoices.filter(i=>i['TANGGAL PEMBAYARAN']===tgl) : DATA.invoices;
+  const filtered = tgl ? DATA.invoices.filter(i=>(i['TANGGAL PEMBAYARAN'] || i['tanggal_pembayaran']) === tgl) : DATA.invoices;
   const invListEl = document.getElementById('invoiceList');
   invListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
+  
   filtered.forEach(i=>{
+    // Added property fallback key lookups
+    const totalVal = i['TOTAL INVOICE'] ?? i['total_invoice'] ?? i['TOTAL'] ?? i['total'] ?? 0;
+    const invNum = i.invoice_number || i['NOMOR INVOICE'] || i['invoice_no'] || '';
+    const status = i.STATUS || i['status'] || '';
+    const pt = i['NAMA PT'] || i['nama_pt'] || '';
+    const kapal = i['NAMA KAPAL'] || i['nama_kapal'] || '';
+
     invListEl.innerHTML += `
       <div class="row-card">
-        <div class="top"><span>${i.invoice_number}</span><span class="badge ${badgeClass(i.STATUS)}">${i.STATUS}</span></div>
-        <div class="mid">${i['NAMA PT']} &middot; ${i['NAMA KAPAL']}</div>
-        <div class="top"><span style="font-weight:400;color:#8b92a5;">Total</span><span class="amount">${fmtIDR(i['TOTAL INVOICE'])}</span></div>
+        <div class="top"><span>${invNum}</span><span class="badge ${badgeClass(status)}">${status}</span></div>
+        <div class="mid">${pt}${pt && kapal ? ' &middot; ' : ''}${kapal}</div>
+        <div class="top"><span style="font-weight:400;color:#8b92a5;">Total</span><span class="amount">${fmtIDR(totalVal)}</span></div>
       </div>`;
   });
 }
@@ -481,3 +502,5 @@ initDashboard();
 </script>
 </body>
 </html>
+
+```
