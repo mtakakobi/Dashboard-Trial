@@ -214,6 +214,42 @@
     justify-content: space-between;
     align-items: center;
   }
+
+  /* Data Table Styling */
+  .data-table-wrap {
+    overflow-x: auto;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-top: 10px;
+    margin-bottom: 16px;
+  }
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    text-align: left;
+  }
+  .data-table th {
+    background: var(--card2);
+    color: var(--muted);
+    font-weight: 600;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--txt);
+    white-space: nowrap;
+  }
+  .data-table tr:last-child td {
+    border-bottom: none;
+  }
+  .data-table tr:hover td {
+    background: var(--card2);
+  }
 </style>
 </head>
 <body>
@@ -437,6 +473,68 @@ function norm(s){
   return (s||'').toString().trim().toLowerCase().replace(/\s+/g, ' '); 
 }
 
+function matchRecipient(item, targetRecipient) {
+  if (!item || !targetRecipient) return false;
+  const target = norm(targetRecipient);
+  if (!target) return false;
+
+  const candidates = [
+    item.recipient_name, item.recipient, item.penerima, item.name,
+    item['NAMA PENERIMA'], item['PENERIMA'], item['Nama Penerima'], item['Penerima'],
+    item['Penerima Fee'], item['PENERIMA FEE'], item['penerima_fee'], item['nama_penerima'],
+    item.recipient_id, item.penerima_id, item['ID PENERIMA'], item['RECIPIENT ID'], item.id
+  ].map(norm).filter(Boolean);
+
+  for (let cand of candidates) {
+    if (cand === target) return true;
+    if (cand.includes(target) || target.includes(cand)) return true;
+  }
+
+  return false;
+}
+
+function getRecipientName(item) {
+  if (!item) return '';
+  return norm(
+    item.recipient_name || item.recipient || item['NAMA PENERIMA'] || item['PENERIMA'] || 
+    item['Nama Penerima'] || item['Penerima'] || item['Penerima Fee'] || item.penerima || item.name || ''
+  );
+}
+
+// Specifically fetch itemized Invoice Fee Detail rows and EXCLUDE aggregated master calculations
+function getInvoiceFeeDetailRows() {
+  let detailRows = [];
+  
+  // Specific keys corresponding strictly to Invoice Fee Detail sheet
+  const detailKeys = [
+    'invoice_fee_details', 'invoice_fee_detail', 'fee_details', 'fee_detail',
+    '02_INVOICE_FEE_DETAIL', '02_FEE_DETAIL', 'fee_items', 'invoice_details'
+  ];
+
+  detailKeys.forEach(k => {
+    if (Array.isArray(DATA[k]) && DATA[k].length > 0) {
+      detailRows.push(...DATA[k]);
+    }
+  });
+
+  // Fallback: If no dedicated array key exists, search arrays in DATA but exclude known master calculation tabs
+  if (detailRows.length === 0) {
+    const excludeKeys = ['withdrawals', 'fee_by_recipient', 'payments', 'transfers', 'work_payment_calc', '04_WORK_PAYMENT_CALC'];
+    Object.keys(DATA).forEach(key => {
+      if (Array.isArray(DATA[key]) && !excludeKeys.includes(key.toLowerCase())) {
+        detailRows.push(...DATA[key]);
+      }
+    });
+  }
+
+  // Filter out any row that lacks an invoice number OR fee ID (i.e. summary/master rows)
+  return detailRows.filter(item => {
+    const invNum = item.invoice_number || item['NOMOR INVOICE'] || item['invoice_no'] || item['INVOICE NUMBER'] || item['NO INVOICE'];
+    const feeId = item.invoice_fee_id || item.fee_id || item['INVOICE FEE ID'] || item['FEE ID'] || item['ID FEE'];
+    return Boolean(invNum || feeId);
+  });
+}
+
 document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click', ()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -453,7 +551,9 @@ function initDashboard() {
     document.getElementById('loading').style.display = 'none';
     document.getElementById('mainContainer').style.opacity = '1';
     
-    DATA.withdrawals.forEach(w => { wdIdToDate[w.withdrawal_id] = w.withdrawal_date; });
+    if (Array.isArray(DATA.withdrawals)) {
+      DATA.withdrawals.forEach(w => { wdIdToDate[w.withdrawal_id] = w.withdrawal_date; });
+    }
     setupFiltersAndChips();
     renderAll();
     document.body.removeChild(script);
@@ -467,7 +567,7 @@ function initDashboard() {
 }
 
 function setupFiltersAndChips() {
-  allWdDates = [...new Set(DATA.withdrawals.map(w=>w.withdrawal_date).filter(Boolean))].sort();
+  allWdDates = DATA.withdrawals ? [...new Set(DATA.withdrawals.map(w=>w.withdrawal_date).filter(Boolean))].sort() : [];
   const ovWdChipsEl = document.getElementById('ovWdChips');
   ovWdChipsEl.innerHTML = '';
   allWdDates.forEach(d=>{
@@ -511,13 +611,13 @@ function setupFiltersAndChips() {
     proofFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
   });
 
-  const activeRecipients = [...new Set(DATA.fee_by_recipient.map(r=>norm(r.name)).filter(Boolean))].sort();
+  const activeRecipients = DATA.fee_by_recipient ? [...new Set(DATA.fee_by_recipient.map(r=>norm(r.name)).filter(Boolean))].sort() : [];
   activeRecipients.forEach(rawName => {
     const displayName = rawName.toUpperCase();
     feeFilterRecipient.innerHTML += `<option value="${rawName}">${displayName}</option>`;
   });
 
-  const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN'] || i['tanggal_pembayaran']).filter(Boolean))].sort();
+  const invDates = DATA.invoices ? [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN'] || i['tanggal_pembayaran']).filter(Boolean))].sort() : [];
   invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
 
   [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.addEventListener('change', renderFee));
@@ -539,17 +639,17 @@ function getOvSelectedDates(){
 
 function recipientNamesForWdDates(dateSet){
   if(!dateSet || dateSet.size === 0) return new Set();
-  const wdIds = new Set(DATA.withdrawals.filter(w=>dateSet.has(w.withdrawal_date)).map(w=>w.withdrawal_id));
-  const batchIds = new Set(DATA.transfers.filter(t=>wdIds.has(t.withdrawal_id)).map(t=>t.payment_batch_id));
+  const wdIds = new Set((DATA.withdrawals||[]).filter(w=>dateSet.has(w.withdrawal_date)).map(w=>w.withdrawal_id));
+  const batchIds = new Set((DATA.transfers||[]).filter(t=>wdIds.has(t.withdrawal_id)).map(t=>t.payment_batch_id));
   const names = new Set();
-  DATA.payments.forEach(p=>{ if(batchIds.has(p.payment_batch_id)) names.add(norm(p.recipient_name)); });
+  (DATA.payments||[]).forEach(p=>{ if(batchIds.has(p.payment_batch_id)) names.add(getRecipientName(p)); });
   return names;
 }
 
 function batchIdsForWdDates(dateSet){
   if(!dateSet || dateSet.size === 0) return new Set();
-  const wdIds = new Set(DATA.withdrawals.filter(w=>dateSet.has(w.withdrawal_date)).map(w=>w.withdrawal_id));
-  return new Set(DATA.transfers.filter(t=>wdIds.has(t.withdrawal_id)).map(t=>t.payment_batch_id));
+  const wdIds = new Set((DATA.withdrawals||[]).filter(w=>dateSet.has(w.withdrawal_date)).map(w=>w.withdrawal_id));
+  return new Set((DATA.transfers||[]).filter(t=>wdIds.has(t.withdrawal_id)).map(t=>t.payment_batch_id));
 }
 
 function renderOverview(){
@@ -558,11 +658,11 @@ function renderOverview(){
   const names = isFiltered ? recipientNamesForWdDates(selectedDates) : null;
   const batchIds = isFiltered ? batchIdsForWdDates(selectedDates) : null;
 
-  const filteredFee = names ? DATA.fee_by_recipient.filter(r=>names.has(norm(r.name))) : DATA.fee_by_recipient;
-  const filteredPayments = batchIds ? DATA.payments.filter(p=>batchIds.has(p.payment_batch_id)) : DATA.payments;
-  const filteredWithdrawals = isFiltered ? DATA.withdrawals.filter(w=>selectedDates.has(w.withdrawal_date)) : DATA.withdrawals;
+  const filteredFee = names ? (DATA.fee_by_recipient||[]).filter(r=>names.has(getRecipientName(r))) : (DATA.fee_by_recipient||[]);
+  const filteredPayments = batchIds ? (DATA.payments||[]).filter(p=>batchIds.has(p.payment_batch_id)) : (DATA.payments||[]);
+  const filteredWithdrawals = isFiltered ? (DATA.withdrawals||[]).filter(w=>selectedDates.has(w.withdrawal_date)) : (DATA.withdrawals||[]);
   const wdIdsSel = new Set(filteredWithdrawals.map(w=>w.withdrawal_id));
-  const filteredTransfers = isFiltered ? DATA.transfers.filter(t=>wdIdsSel.has(t.withdrawal_id)) : DATA.transfers;
+  const filteredTransfers = isFiltered ? (DATA.transfers||[]).filter(t=>wdIdsSel.has(t.withdrawal_id)) : (DATA.transfers||[]);
 
   const total_paid_work_calc = filteredPayments.reduce((s, p) => s + parseNum(p.net_amount), 0);
   const total_entitlement = filteredFee.reduce((s, r) => s + parseNum(r.amount), 0);
@@ -585,21 +685,21 @@ function renderOverview(){
 
   const recipientDataMap = {};
   filteredFee.forEach(r => {
-    const key = norm(r.name);
+    const key = getRecipientName(r);
     recipientDataMap[key] = {
-      name: r.name.toUpperCase(),
+      name: (r.name || r.recipient_name || r.penerima || '').toUpperCase(),
       totalFee: parseNum(r.amount),
       paidFee: 0
     };
   });
 
   filteredPayments.forEach(p => {
-    const key = norm(p.recipient_name);
+    const key = getRecipientName(p);
     if (recipientDataMap[key]) {
       recipientDataMap[key].paidFee += parseNum(p.net_amount);
     } else if (key) {
       recipientDataMap[key] = {
-        name: (p.recipient_name || '').toUpperCase(),
+        name: (p.recipient_name || p.penerima || '').toUpperCase(),
         totalFee: 0,
         paidFee: parseNum(p.net_amount)
       };
@@ -702,29 +802,29 @@ function renderFee(){
   const tglWd = feeFilterTglWd.value;
   const recipient = feeFilterRecipient.value;
   const names = tglWd ? recipientNamesForWdDates(new Set([tglWd])) : null;
-  let filtered = names ? DATA.fee_by_recipient.filter(r=>names.has(norm(r.name))) : DATA.fee_by_recipient;
+  let filtered = names ? (DATA.fee_by_recipient||[]).filter(r=>names.has(getRecipientName(r))) : (DATA.fee_by_recipient||[]);
   
-  if(recipient) filtered = filtered.filter(r=>norm(r.name)===recipient);
+  if(recipient) filtered = filtered.filter(r=>matchRecipient(r, recipient));
   const feeListEl = document.getElementById('feeList');
   feeListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data untuk filter ini</div>';
   
   filtered.forEach(r=>{
-    // Summary row for recipient
+    // Overall Summary Card for Recipient
     feeListEl.innerHTML += `
       <div class="row-card" style="border-left: 3px solid var(--accent);">
         <div class="top">
-          <span style="font-size:14px; font-weight:700;">${r.name.toUpperCase()}</span>
+          <span style="font-size:14px; font-weight:700;">${(r.name || r.recipient_name || '').toUpperCase()}</span>
           <span class="amount" style="font-size:15px; color:var(--accent);">${fmtIDR(r.amount)}</span>
         </div>
       </div>
     `;
 
-    // IF RECIPIENT FILTER IS ACTIVE: Show detailed breakdown + Total Sum + Payment Date
+    // IF RECIPIENT FILTER IS ACTIVE: Fetch detail rows strictly from Invoice Fee Detail sheet
     if(recipient) {
-      const allDetailItems = DATA.fees || DATA.fee_details || DATA.fee_items || DATA.invoices || [];
-      const recipientItems = allDetailItems.filter(item => {
-        const itemRecipient = norm(item.recipient_name || item.penerima || item['NAMA PENERIMA'] || item['PENERIMA'] || item.name || '');
-        if (itemRecipient !== recipient) return false;
+      const rawDetailRows = getInvoiceFeeDetailRows();
+      
+      const recipientItems = rawDetailRows.filter(item => {
+        if (!matchRecipient(item, recipient)) return false;
         if (tglWd) {
           const itemWdDate = item.withdrawal_date || item['TANGGAL WITHDRAWAL'] || item['tanggal_withdrawal'] || wdIdToDate[item.withdrawal_id];
           if (itemWdDate && itemWdDate !== tglWd) return false;
@@ -733,7 +833,11 @@ function renderFee(){
       });
 
       if (recipientItems.length > 0) {
-        const totalSum = recipientItems.reduce((s, item) => s + parseNum(item.invoice_amount || item.fee_amount || item.amount || item['TOTAL INVOICE'] || item['NILAI FEE'] || item['JUMLAH FEE'] || 0), 0);
+        // Total Sum across all itemized detail rows
+        const totalSum = recipientItems.reduce((s, item) => s + parseNum(
+          item.invoice_amount || item.fee_amount || item.amount || item['TOTAL INVOICE'] || 
+          item['NILAI FEE'] || item['JUMLAH FEE'] || item['FEE'] || item['JUMLAH_FEE'] || 0
+        ), 0);
 
         feeListEl.innerHTML += `
           <div class="fee-summary-banner">
@@ -741,35 +845,50 @@ function renderFee(){
               <div style="font-size:11px; color:var(--muted); font-weight:600;">TOTAL BREAKDOWN AMOUNT</div>
               <div style="font-size:18px; font-weight:800; color:var(--green); margin-top:2px;">${fmtIDR(totalSum)}</div>
             </div>
-            <span class="badge lunas" style="font-size:11px;">${recipientItems.length} Items</span>
+            <span class="badge lunas" style="font-size:11px;">${recipientItems.length} Item Rows</span>
           </div>
-          <div style="font-size:12px; color:var(--muted); margin: 10px 0 6px 4px; font-weight:600;">Rincian Item Invoice Fee:</div>
+
+          <!-- ITEMIZED ROW-BY-ROW TABLE -->
+          <div class="data-table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Tanggal Pembayaran</th>
+                  <th>Invoice Fee ID</th>
+                  <th>Nomor Invoice</th>
+                  <th style="text-align:right;">Jumlah Fee</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${recipientItems.map((item, idx) => {
+                  const invNum = item.invoice_number || item['NOMOR INVOICE'] || item['invoice_no'] || 
+                                item['INVOICE NUMBER'] || item['NO INVOICE'] || item['Invoice Number'] || '-';
+                  const feeId = item.invoice_fee_id || item.fee_id || item['INVOICE FEE ID'] || 
+                                item['FEE ID'] || item['ID FEE'] || item['Invoice Fee ID'] || item.id || '-';
+                  const feeAmt = parseNum(
+                    item.invoice_amount || item.fee_amount || item.amount || item['TOTAL INVOICE'] || 
+                    item['NILAI FEE'] || item['JUMLAH FEE'] || item['FEE'] || item['JUMLAH_FEE'] || 0
+                  );
+                  const payDate = item['TANGGAL PEMBAYARAN'] || item['tanggal_pembayaran'] || item.payment_date || 
+                                  item.invoice_payment_date || item['TANGGAL BAYAR'] || item.transfer_date || '-';
+
+                  return `
+                    <tr>
+                      <td style="color:var(--muted); font-size:11px;">${idx + 1}</td>
+                      <td>📅 ${payDate}</td>
+                      <td><span class="badge open" style="font-size:10px;">${feeId}</span></td>
+                      <td style="font-weight:600;">${invNum}</td>
+                      <td style="text-align:right; font-weight:700;" class="amount">${fmtIDR(feeAmt)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
         `;
-
-        recipientItems.forEach(item => {
-          const invNum = item.invoice_number || item['NOMOR INVOICE'] || item['invoice_no'] || item['INVOICE NUMBER'] || item['NO INVOICE'] || '-';
-          const feeId = item.invoice_fee_id || item.fee_id || item['INVOICE FEE ID'] || item['FEE ID'] || item['ID FEE'] || item.id || '-';
-          const feeAmt = parseNum(item.invoice_amount || item.fee_amount || item.amount || item['TOTAL INVOICE'] || item['NILAI FEE'] || item['JUMLAH FEE'] || 0);
-          
-          // Added Invoice Payment DateLookup
-          const payDate = item['TANGGAL PEMBAYARAN'] || item['tanggal_pembayaran'] || item.payment_date || item.invoice_payment_date || item['TANGGAL BAYAR'] || item.transfer_date || '-';
-
-          feeListEl.innerHTML += `
-            <div class="row-card" style="background: var(--card2); margin-left: 8px;">
-              <div class="top">
-                <span style="font-weight:600; color:var(--txt);">${invNum}</span>
-                <span class="badge open" style="font-size:10px;">ID: ${feeId}</span>
-              </div>
-              <div class="mid" style="margin-top:4px;">
-                📅 Tanggal Pembayaran Invoice: <strong style="color:var(--txt);">${payDate}</strong>
-              </div>
-              <div class="top" style="margin-top:6px;">
-                <span style="font-weight:400; color:var(--muted); font-size:11.5px;">Invoice Fee Amount</span>
-                <span class="amount">${fmtIDR(feeAmt)}</span>
-              </div>
-            </div>
-          `;
-        });
+      } else {
+        feeListEl.innerHTML += `<div class="empty-state">Tidak ada rincian baris dari Invoice Fee Detail untuk penerima "${recipient.toUpperCase()}"</div>`;
       }
     }
   });
@@ -778,13 +897,13 @@ function renderFee(){
 function renderPayment(){
   const tglWd = payFilterTglWd.value;
   const batchIds = tglWd ? batchIdsForWdDates(new Set([tglWd])) : null;
-  const filtered = batchIds ? DATA.payments.filter(p=>batchIds.has(p.payment_batch_id)) : DATA.payments;
+  const filtered = batchIds ? (DATA.payments||[]).filter(p=>batchIds.has(p.payment_batch_id)) : (DATA.payments||[]);
   const paymentListEl = document.getElementById('paymentList');
   paymentListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data untuk filter ini</div>';
   filtered.forEach(p=>{
     paymentListEl.innerHTML += `
       <div class="row-card">
-        <div class="top"><span>${(p.recipient_name||'').toUpperCase()}</span><span class="badge ${badgeClass(p.status)}">${p.status||'OPEN'}</span></div>
+        <div class="top"><span>${(p.recipient_name||p.penerima||'').toUpperCase()}</span><span class="badge ${badgeClass(p.status)}">${p.status||'OPEN'}</span></div>
         <div class="mid">${p.payment_batch_id||''} &middot; ${p.invoice_count||0} invoice &middot; ${p.tax_method||''}</div>
         <div class="top"><span style="font-weight:400;color:#8b92a5;">Net Amount</span><span class="amount">${fmtIDR(p.net_amount)}</span></div>
       </div>`;
@@ -794,7 +913,7 @@ function renderPayment(){
 function renderWithdrawalTab(){
   const tglWd = selTglWithdrawal.value;
 
-  const filteredWd = DATA.withdrawals.filter(w => {
+  const filteredWd = (DATA.withdrawals||[]).filter(w => {
     if (tglWd && w.withdrawal_date !== tglWd) return false;
     return true;
   });
@@ -810,7 +929,7 @@ function renderWithdrawalTab(){
       </div>`;
   });
 
-  const filteredTr = DATA.transfers.filter(t => {
+  const filteredTr = (DATA.transfers||[]).filter(t => {
     const wDate = wdIdToDate[t.withdrawal_id];
     if (tglWd && wDate !== tglWd) return false;
     return true;
@@ -821,7 +940,7 @@ function renderWithdrawalTab(){
   filteredTr.forEach(t => {
     trListEl.innerHTML += `
       <div class="row-card">
-        <div class="top"><span>${(t.recipient_name||'').toUpperCase()}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
+        <div class="top"><span>${(t.recipient_name||t.penerima||'').toUpperCase()}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
         <div class="mid">${t.transfer_date||''} &middot; WD: ${t.withdrawal_id}</div>
       </div>`;
   });
@@ -829,7 +948,7 @@ function renderWithdrawalTab(){
 
 function renderInvoice(){
   const tgl = invFilterTglBayar.value;
-  const filtered = tgl ? DATA.invoices.filter(i=>(i['TANGGAL PEMBAYARAN'] || i['tanggal_pembayaran']) === tgl) : DATA.invoices;
+  const filtered = tgl ? (DATA.invoices||[]).filter(i=>(i['TANGGAL PEMBAYARAN'] || i['tanggal_pembayaran']) === tgl) : (DATA.invoices||[]);
   const invListEl = document.getElementById('invoiceList');
   invListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
   
@@ -851,7 +970,7 @@ function renderInvoice(){
 
 function renderProof(){
   const tgl = proofFilterTglWd.value;
-  const filtered = tgl ? DATA.transfers.filter(t=>wdIdToDate[t.withdrawal_id]===tgl) : DATA.transfers;
+  const filtered = tgl ? (DATA.transfers||[]).filter(t=>wdIdToDate[t.withdrawal_id]===tgl) : (DATA.transfers||[]);
   const proofListEl = document.getElementById('proofList');
   proofListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
   filtered.forEach(t=>{
@@ -859,7 +978,7 @@ function renderProof(){
     const name = t.transfer_proof_file_name || t.transfer_proof_name || 'Lihat Bukti';
     proofListEl.innerHTML += `
       <div class="row-card">
-        <div class="top"><span>${(t.recipient_name||'').toUpperCase()}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
+        <div class="top"><span>${(t.recipient_name||t.penerima||'').toUpperCase()}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
         <div class="mid">${t.transfer_date || ''}</div>
         ${url ? `<a class="proof-link" href="${url.trim()}" target="_blank">📎 ${name}</a>` : '<div class="mid">Tidak ada bukti</div>'}
       </div>`;
