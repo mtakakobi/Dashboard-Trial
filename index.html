@@ -37,14 +37,12 @@
   
   header{padding:14px 16px 10px;position:sticky;top:0;background:var(--bg);z-index:10;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;transition: background 0.3s ease, border-color 0.3s ease;}
   
-  /* Header Left Container with Logo */
   .header-left {
     display: flex;
     align-items: center;
     gap: 12px;
   }
   
-  /* Enhanced Logo Container */
   .brand-logo-wrap {
     display: flex;
     align-items: center;
@@ -65,7 +63,6 @@
   header h1{font-size:16px;margin:0 0 2px;font-weight:700;}
   header p{margin:0;font-size:11.5px;color:var(--muted);}
   
-  /* Theme Toggle Button */
   .theme-toggle-btn {
     background: var(--card2);
     border: 1px solid var(--border);
@@ -90,13 +87,46 @@
   .section{display:none;}
   .section.active{display:block;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;transition: background 0.3s ease, border-color 0.3s ease;}
-  .card .label{font-size:11.5px;color:var(--muted);margin-bottom:6px;}
-  .card .value{font-size:17px;font-weight:700;}
+  
+  /* Overview Top 2-Column Grid Layout */
+  .overview-top-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 580px) {
+    .overview-top-grid { grid-template-columns: 1fr; }
+  }
+
+  .overview-chart-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 14px;
+  }
+  .overview-chart-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 12.5px;
+    color: var(--txt);
+    align-self: flex-start;
+  }
+
+  .overview-metrics-col {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;transition: background 0.3s ease, border-color 0.3s ease;}
+  .card .label{font-size:11px;color:var(--muted);margin-bottom:4px;}
+  .card .value{font-size:15.5px;font-weight:700;}
   .card .value.green{color:var(--green);}
   .card .value.red{color:var(--red);}
   .card .value.amber{color:var(--amber);}
   .card.full{grid-column:1/3;}
+  
   .section h2{font-size:14px;margin:18px 0 10px;color:var(--txt);}
   .chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;transition: background 0.3s ease, border-color 0.3s ease;}
   .row-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;}
@@ -106,7 +136,8 @@
   .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;}
   .badge.lunas, .badge.transferred, .badge.done, .badge.completed, .badge.balanced{background:rgba(61,220,151,0.15);color:var(--green);}
   .badge.open, .badge.partial{background:rgba(255,184,77,0.15);color:var(--amber);}
-  .badge.belum, .badge.outstanding, .badge.overpaid{background:rgba(255,107,107,0.15);color:var(--red);}
+  .badge.belum, .badge.outstanding{background:rgba(255,107,107,0.15);color:var(--red);}
+  .badge.overpaid{background:rgba(255,184,77,0.2);color:var(--amber);border:1px solid var(--amber);}
   .amount{font-weight:700;}
   footer{text-align:center;color:var(--muted);font-size:11px;padding:20px 0;}
   
@@ -126,10 +157,10 @@
   .filters-inline button{flex:1;background:var(--card2);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:5px;border-radius:8px;cursor:pointer;}
   #loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,17,21,0.85);z-index:999;display:flex;justify-content:center;align-items:center;font-size:14px;font-weight:600;}
 
-  /* Single Stacked Progress Bar */
+  /* Progress Bar Styles */
   .progress-card-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
-  .progress-bar-container { width: 100%; height: 18px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; position: relative; display: flex; }
-  .progress-bar-fill { height: 100%; background: var(--green); transition: width 0.4s ease; border-radius: 9px 0 0 9px; }
+  .progress-bar-container { width: 100%; height: 16px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; position: relative; display: flex; }
+  .progress-bar-fill { height: 100%; background: var(--green); transition: width 0.4s ease; border-radius: 9px; }
   .progress-bar-remaining { height: 100%; background: var(--accent); flex: 1; opacity: 0.6; }
   .progress-legend { display: flex; justify-content: space-between; margin-top: 10px; font-size: 11.5px; }
   .legend-item { display: flex; align-items: center; gap: 6px; }
@@ -137,12 +168,13 @@
   .legend-dot.green { background: var(--green); }
   .legend-dot.blue { background: var(--accent); opacity: 0.8; }
 
-  /* Recipient Outstanding Detail Cards */
-  .recipient-detail-card { background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; transition: background 0.3s ease, border-color 0.3s ease; }
-  .recipient-detail-card:last-child { margin-bottom: 0; }
-  .recipient-detail-header { display: flex; justify-content: space-between; font-weight: 600; font-size: 12.5px; margin-bottom: 6px; }
-  .recipient-detail-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; font-size: 11px; }
-  .recipient-detail-grid div span { display: block; color: var(--muted); font-size: 10px; }
+  /* Recipient Progress Cards */
+  .recipient-progress-card { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; transition: background 0.3s ease, border-color 0.3s ease; }
+  .recipient-progress-card.has-overpaid { border-color: rgba(255, 184, 77, 0.4); }
+  .recipient-progress-card:last-child { margin-bottom: 0; }
+  .recipient-progress-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 13px; margin-bottom: 8px; }
+  .recipient-progress-caption { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; color: var(--muted); }
+  .recipient-progress-caption span strong { color: var(--txt); }
 </style>
 </head>
 <body>
@@ -151,10 +183,8 @@
 
 <header>
   <div class="header-left">
-    <!-- High-Resolution Enhanced ABT Logo -->
     <div class="brand-logo-wrap">
       <svg viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
-        <!-- Globe Outline & Grid lines -->
         <ellipse cx="150" cy="100" rx="140" ry="90" fill="none" stroke="#1d2671" stroke-width="7"/>
         <ellipse cx="150" cy="100" rx="140" ry="45" fill="none" stroke="#1d2671" stroke-width="4"/>
         <ellipse cx="150" cy="100" rx="140" ry="18" fill="none" stroke="#1d2671" stroke-width="4"/>
@@ -162,10 +192,8 @@
         <line x1="10" y1="100" x2="290" y2="100" stroke="#1d2671" stroke-width="5"/>
         <path d="M 50,25 C 90,80 90,120 50,175" fill="none" stroke="#1d2671" stroke-width="4"/>
         <path d="M 250,25 C 210,80 210,120 250,175" fill="none" stroke="#1d2671" stroke-width="4"/>
-        <!-- Globe Landmarks Overlay (Vectorized Map) -->
         <path d="M 60,40 Q 90,20 130,35 Q 160,50 140,80 Q 90,90 60,40 Z" fill="#1d2671" opacity="0.9"/>
         <path d="M 160,25 Q 220,15 260,55 Q 220,95 170,75 Z" fill="#1d2671" opacity="0.9"/>
-        <!-- ABT Red Typography -->
         <text x="150" y="125" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif" font-weight="900" font-size="92" fill="#d90429" text-anchor="middle" letter-spacing="-2">ABT</text>
       </svg>
     </div>
@@ -200,53 +228,59 @@
         </div>
       </div>
     </div>
-    <div class="grid2">
-      <div class="card"><div class="label">Total Fee Entitlement</div><div class="value" id="ov-entitlement">-</div></div>
-      <div class="card"><div class="label">Total Fee Paid</div><div class="value green" id="ov-paid">-</div></div>
-      <div class="card"><div class="label">Outstanding Fee</div><div class="value amber" id="ov-outstanding">-</div></div>
-      <div class="card"><div class="label">Withdrawal Balance</div><div class="value" id="ov-balance">-</div></div>
-      
-      <div class="card full">
-        <div class="progress-card-header">
-          <div>
-            <div class="label">Total Withdrawal vs Total Transfer</div>
-            <div class="value" id="ov-withdrawal" style="font-size:16px;">-</div>
-          </div>
-          <div style="text-align:right;">
-            <span class="badge lunas" id="ov-transfer-pct">0% Transferred</span>
-            <div class="value green" id="ov-transfer" style="font-size:15px; margin-top:2px;">-</div>
-          </div>
-        </div>
 
-        <div class="progress-bar-container">
-          <div class="progress-bar-fill" id="ov-bar-fill" style="width: 0%;"></div>
-          <div class="progress-bar-remaining"></div>
+    <!-- 2-COLUMN LAYOUT BELOW FILTER -->
+    <div class="overview-top-grid">
+      <!-- Left Column: Resized Doughnut Chart -->
+      <div class="card overview-chart-card">
+        <h3>Status Pembayaran</h3>
+        <div style="width:100%; height:190px; position:relative; display:flex; justify-content:center; align-items:center;">
+          <canvas id="chartPayStatus"></canvas>
         </div>
+      </div>
 
-        <div class="progress-legend">
-          <div class="legend-item">
-            <span class="legend-dot green"></span>
-            <span style="color:var(--txt);">Transferred</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-dot blue"></span>
-            <span style="color:var(--muted);">Remaining Balance</span>
-          </div>
+      <!-- Right Column: Metric Cards -->
+      <div class="overview-metrics-col">
+        <div class="card"><div class="label">Total Fee Entitlement</div><div class="value" id="ov-entitlement">-</div></div>
+        <div class="card"><div class="label">Total Fee Paid</div><div class="value green" id="ov-paid">-</div></div>
+        <div class="card"><div class="label">Outstanding Fee</div><div class="value amber" id="ov-outstanding">-</div></div>
+        <div class="card"><div class="label">Withdrawal Balance</div><div class="value" id="ov-balance">-</div></div>
+      </div>
+    </div>
+
+    <!-- Total Withdrawal vs Total Transfer Bar -->
+    <div class="card full" style="margin-bottom:16px;">
+      <div class="progress-card-header">
+        <div>
+          <div class="label">Total Withdrawal vs Total Transfer</div>
+          <div class="value" id="ov-withdrawal" style="font-size:16px;">-</div>
+        </div>
+        <div style="text-align:right;">
+          <span class="badge lunas" id="ov-transfer-pct">0% Transferred</span>
+          <div class="value green" id="ov-transfer" style="font-size:15px; margin-top:2px;">-</div>
+        </div>
+      </div>
+
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="ov-bar-fill" style="width: 0%;"></div>
+        <div class="progress-bar-remaining"></div>
+      </div>
+
+      <div class="progress-legend">
+        <div class="legend-item">
+          <span class="legend-dot green"></span>
+          <span style="color:var(--txt);">Transferred</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-dot blue"></span>
+          <span style="color:var(--muted);">Remaining Balance</span>
         </div>
       </div>
     </div>
 
-    <h2>Fee per Recipient</h2>
-    <div class="chart-wrap"><canvas id="chartRecipient" height="220"></canvas></div>
-
-    <h2>Total Fee vs Paid Fee per Recipient</h2>
-    <div class="chart-wrap"><canvas id="chartFeeVsPaid" height="240"></canvas></div>
-
-    <h2>Rincian Outstanding Fee per Recipient</h2>
-    <div class="chart-wrap" id="recipientOutstandingDetails"></div>
-
-    <h2>Status Pembayaran (Payment Batch)</h2>
-    <div class="chart-wrap"><canvas id="chartPayStatus" height="180"></canvas></div>
+    <!-- Progress Pembayaran Fee per Recipient -->
+    <h2>Progress Pembayaran Fee per Recipient</h2>
+    <div class="chart-wrap" id="recipientProgressList"></div>
   </section>
 
   <section class="section" id="fee">
@@ -304,7 +338,7 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxalausGPecZaN9EcDN9rRbg2A8nUhT9hDS94J6L_BNLI_nnGj9Qm_YBDVI8Q1knPdk/exec";
 
 let DATA = {};
-let chartRecipient, chartFeeVsPaid, chartPayStatus;
+let chartPayStatus;
 const wdIdToDate = {};
 let allWdDates = [];
 
@@ -332,16 +366,6 @@ themeToggleBtn.addEventListener('click', () => {
 function updateChartColors() {
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
   const textColor = isLight ? '#1f2329' : '#e8eaef';
-  const gridColor = isLight ? '#dcdfe6' : '#2a2f3d';
-
-  [chartRecipient, chartFeeVsPaid].forEach(chart => {
-    if(chart) {
-      chart.options.scales.x.ticks.color = isLight ? '#606266' : '#8b92a5';
-      chart.options.scales.x.grid.color = gridColor;
-      chart.options.scales.y.ticks.color = textColor;
-      chart.update();
-    }
-  });
 
   if(chartPayStatus) {
     chartPayStatus.options.plugins.legend.labels.color = textColor;
@@ -507,16 +531,17 @@ function renderOverview(){
   const wdIdsSel = new Set(filteredWithdrawals.map(w=>w.withdrawal_id));
   const filteredTransfers = isFiltered ? DATA.transfers.filter(t=>wdIdsSel.has(t.withdrawal_id)) : DATA.transfers;
 
-  const total_entitlement = filteredFee.reduce((s,r)=>s + parseNum(r.amount), 0);
-  const total_withdrawal = filteredWithdrawals.reduce((s,w)=>s + parseNum(w.withdrawal_amount), 0);
-  const total_transfer = filteredTransfers.reduce((s,t)=>s + parseNum(t.transfer_amount || t.amount), 0);
+  const total_paid_work_calc = filteredPayments.reduce((s, p) => s + parseNum(p.net_amount), 0);
+  const total_entitlement = filteredFee.reduce((s, r) => s + parseNum(r.amount), 0);
+  const total_withdrawal = filteredWithdrawals.reduce((s, w) => s + parseNum(w.withdrawal_amount), 0);
+  const total_transfer = filteredTransfers.reduce((s, t) => s + parseNum(t.transfer_amount || t.amount), 0);
   const withdrawal_balance = total_withdrawal - total_transfer;
-  const outstanding_fee = Math.max(0, total_entitlement - total_transfer);
+  const outstanding_fee = Math.max(0, total_entitlement - total_paid_work_calc);
 
   const pctTransfer = total_withdrawal > 0 ? Math.min(100, Math.max(0, (total_transfer / total_withdrawal) * 100)) : 0;
 
   document.getElementById('ov-entitlement').textContent = fmtIDR(total_entitlement);
-  document.getElementById('ov-paid').textContent = fmtIDR(total_transfer);
+  document.getElementById('ov-paid').textContent = fmtIDR(total_paid_work_calc);
   document.getElementById('ov-outstanding').textContent = fmtIDR(outstanding_fee);
   document.getElementById('ov-balance').textContent = fmtIDR(withdrawal_balance);
   
@@ -525,30 +550,6 @@ function renderOverview(){
   document.getElementById('ov-transfer-pct').textContent = `${pctTransfer.toFixed(1)}% Transferred`;
   document.getElementById('ov-bar-fill').style.width = `${pctTransfer}%`;
 
-  // 1. Render Original Chart (Fee per Recipient)
-  if (!chartRecipient) {
-    chartRecipient = new Chart(document.getElementById('chartRecipient'), {
-      type: 'bar',
-      data: {
-        labels: filteredFee.map(r=>r.name.toUpperCase()),
-        datasets: [{ data: filteredFee.map(r=>parseNum(r.amount)), backgroundColor: '#5b8def', borderRadius: 6 }]
-      },
-      options: {
-        indexAxis: 'y',
-        plugins: { legend: { display:false } },
-        scales: {
-          x: { ticks: { color:'#8b92a5', callback:(v)=> (v/1e6).toFixed(0)+'jt' }, grid:{color:'#2a2f3d'} },
-          y: { ticks: { color:'#e8eaef', font:{size:11} }, grid: { display: false } }
-        }
-      }
-    });
-  } else {
-    chartRecipient.data.labels = filteredFee.map(r=>r.name.toUpperCase());
-    chartRecipient.data.datasets[0].data = filteredFee.map(r=>parseNum(r.amount));
-    chartRecipient.update('none');
-  }
-
-  // 2. Aggregate Transfers Per Recipient for Accurate Paid Fee
   const recipientDataMap = {};
   filteredFee.forEach(r => {
     const key = norm(r.name);
@@ -559,83 +560,71 @@ function renderOverview(){
     };
   });
 
-  filteredTransfers.forEach(t => {
-    const key = norm(t.recipient_name);
+  filteredPayments.forEach(p => {
+    const key = norm(p.recipient_name);
     if (recipientDataMap[key]) {
-      recipientDataMap[key].paidFee += parseNum(t.transfer_amount || t.amount);
+      recipientDataMap[key].paidFee += parseNum(p.net_amount);
     } else if (key) {
       recipientDataMap[key] = {
-        name: (t.recipient_name || '').toUpperCase(),
+        name: (p.recipient_name || '').toUpperCase(),
         totalFee: 0,
-        paidFee: parseNum(t.transfer_amount || t.amount)
+        paidFee: parseNum(p.net_amount)
       };
     }
   });
 
   const recipientList = Object.values(recipientDataMap);
-  const labels = recipientList.map(r => r.name);
-  const totalFeeData = recipientList.map(r => r.totalFee);
-  const paidFeeData = recipientList.map(r => r.paidFee);
 
-  if (!chartFeeVsPaid) {
-    chartFeeVsPaid = new Chart(document.getElementById('chartFeeVsPaid'), {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [
-          { label: 'Total Fee', data: totalFeeData, backgroundColor: '#5b8def', borderRadius: 4 },
-          { label: 'Paid Fee (Transfers)', data: paidFeeData, backgroundColor: '#3ddc97', borderRadius: 4 }
-        ]
-      },
-      options: {
-        indexAxis: 'y',
-        plugins: { 
-          legend: { display: true, position: 'top', labels: { color: '#e8eaef', font: { size: 11 } } } 
-        },
-        scales: {
-          x: { ticks: { color:'#8b92a5', callback:(v)=> (v/1e6).toFixed(0)+'jt' }, grid:{color:'#2a2f3d'} },
-          y: { ticks: { color:'#e8eaef', font:{size:11} }, grid: { display: false } }
-        }
-      }
-    });
-  } else {
-    chartFeeVsPaid.data.labels = labels;
-    chartFeeVsPaid.data.datasets[0].data = totalFeeData;
-    chartFeeVsPaid.data.datasets[1].data = paidFeeData;
-    chartFeeVsPaid.update('none');
-  }
+  const progressListEl = document.getElementById('recipientProgressList');
+  progressListEl.innerHTML = '';
 
-  // 3. Render Recipient Outstanding Details Breakdown
-  const detailsEl = document.getElementById('recipientOutstandingDetails');
-  detailsEl.innerHTML = '';
-  
   if(recipientList.length === 0) {
-    detailsEl.innerHTML = '<div class="empty-state">Tidak ada data recipient</div>';
+    progressListEl.innerHTML = '<div class="empty-state">Tidak ada data recipient</div>';
   } else {
     recipientList.forEach(r => {
+      const diff = r.paidFee - r.totalFee;
+      const isOverpaid = diff > 0;
       const outstanding = Math.max(0, r.totalFee - r.paidFee);
-      const isSettled = outstanding === 0;
-      const statusBadge = isSettled 
-        ? '<span class="badge lunas">LUNAS</span>' 
-        : `<span class="badge ${outstanding > 0 ? 'outstanding' : 'open'}">${fmtIDR(outstanding)}</span>`;
+      const isSettled = outstanding === 0 && !isOverpaid;
+      
+      const pctPaid = r.totalFee > 0 ? Math.min(100, (r.paidFee / r.totalFee) * 100) : (r.paidFee > 0 ? 100 : 0);
 
-      detailsEl.innerHTML += `
-        <div class="recipient-detail-card">
-          <div class="recipient-detail-header">
+      let statusBadge = '';
+      if (isOverpaid) {
+        statusBadge = '<span class="badge overpaid">⚠️ OVERPAID</span>';
+      } else if (isSettled) {
+        statusBadge = '<span class="badge lunas">LUNAS</span>';
+      } else {
+        statusBadge = `<span class="badge outstanding">${pctPaid.toFixed(0)}% PAID</span>`;
+      }
+
+      const balanceText = isOverpaid 
+        ? `Overpaid: <strong style="color:var(--amber);">${fmtIDR(diff)}</strong>` 
+        : `Outstanding: <strong style="color:${isSettled ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(outstanding)}</strong>`;
+
+      progressListEl.innerHTML += `
+        <div class="recipient-progress-card ${isOverpaid ? 'has-overpaid' : ''}">
+          <div class="recipient-progress-header">
             <span>${r.name}</span>
             ${statusBadge}
           </div>
-          <div class="recipient-detail-grid">
-            <div><span>Total Fee</span><strong>${fmtIDR(r.totalFee)}</strong></div>
-            <div><span>Paid Fee</span><strong style="color:var(--green);">${fmtIDR(r.paidFee)}</strong></div>
-            <div><span>Outstanding</span><strong style="color:${isSettled ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(outstanding)}</strong></div>
+          
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" style="width: ${pctPaid}%;"></div>
+            ${pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
+          </div>
+
+          <div class="recipient-progress-caption">
+            <span>Total Fee: <strong>${fmtIDR(r.totalFee)}</strong></span>
+            <span>Paid (Net): <strong style="color:var(--green);">${fmtIDR(r.paidFee)}</strong></span>
+            <span>${balanceText}</span>
           </div>
         </div>
       `;
     });
   }
 
-  // 4. Render Payment Status Doughnut Chart
+  // Render Resized Doughnut Chart in Left Column
   const payStatusCounts = {};
   filteredPayments.forEach(p=>{
     const s = p.status || 'OPEN';
@@ -649,7 +638,13 @@ function renderOverview(){
         labels: Object.keys(payStatusCounts),
         datasets: [{ data: Object.values(payStatusCounts), backgroundColor: ['#3ddc97','#ffb84d','#ff6b6b','#5b8def'] }]
       },
-      options: { plugins: { legend: { position:'bottom', labels:{ color:'#e8eaef', font:{size:11} } } } }
+      options: { 
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { position:'bottom', labels:{ color:'#e8eaef', font:{size:10}, boxWidth: 10, padding: 8 } } 
+        } 
+      }
     });
   } else {
     chartPayStatus.data.labels = Object.keys(payStatusCounts);
