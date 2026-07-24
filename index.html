@@ -202,6 +202,18 @@
   .recipient-progress-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: clamp(12px, 1.5vw, 13.5px); margin-bottom: 8px; }
   .recipient-progress-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; margin-top: 8px; font-size: clamp(10.5px, 1.2vw, 12px); color: var(--muted); }
   .recipient-progress-caption span strong { color: var(--txt); }
+
+  /* Fee Summary Banner */
+  .fee-summary-banner {
+    background: var(--card2);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 </style>
 </head>
 <body>
@@ -596,16 +608,13 @@ function renderOverview(){
 
   const recipientList = Object.values(recipientDataMap);
 
-  // RE-ORDERING LOGIC: Sort strictly by raw magnitude of difference (|Paid Fee - Total Fee|)
   recipientList.sort((a, b) => {
     const absDiffA = Math.abs(a.paidFee - a.totalFee);
     const absDiffB = Math.abs(b.paidFee - b.totalFee);
 
-    // Largest numerical gap or surplus moves to the top
     if (absDiffB !== absDiffA) {
       return absDiffB - absDiffA;
     }
-
     return a.name.localeCompare(b.name);
   });
 
@@ -659,7 +668,6 @@ function renderOverview(){
     });
   }
 
-  // Render Resized Doughnut Chart
   const payStatusCounts = {};
   filteredPayments.forEach(p=>{
     const s = p.status || 'OPEN';
@@ -699,8 +707,71 @@ function renderFee(){
   if(recipient) filtered = filtered.filter(r=>norm(r.name)===recipient);
   const feeListEl = document.getElementById('feeList');
   feeListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data untuk filter ini</div>';
+  
   filtered.forEach(r=>{
-    feeListEl.innerHTML += `<div class="row-card"><div class="top"><span>${r.name.toUpperCase()}</span><span class="amount">${fmtIDR(r.amount)}</span></div></div>`;
+    // Summary row for recipient
+    feeListEl.innerHTML += `
+      <div class="row-card" style="border-left: 3px solid var(--accent);">
+        <div class="top">
+          <span style="font-size:14px; font-weight:700;">${r.name.toUpperCase()}</span>
+          <span class="amount" style="font-size:15px; color:var(--accent);">${fmtIDR(r.amount)}</span>
+        </div>
+      </div>
+    `;
+
+    // IF RECIPIENT FILTER IS ACTIVE: Show detailed breakdown + Total Sum + Payment Date
+    if(recipient) {
+      const allDetailItems = DATA.fees || DATA.fee_details || DATA.fee_items || DATA.invoices || [];
+      const recipientItems = allDetailItems.filter(item => {
+        const itemRecipient = norm(item.recipient_name || item.penerima || item['NAMA PENERIMA'] || item['PENERIMA'] || item.name || '');
+        if (itemRecipient !== recipient) return false;
+        if (tglWd) {
+          const itemWdDate = item.withdrawal_date || item['TANGGAL WITHDRAWAL'] || item['tanggal_withdrawal'] || wdIdToDate[item.withdrawal_id];
+          if (itemWdDate && itemWdDate !== tglWd) return false;
+        }
+        return true;
+      });
+
+      if (recipientItems.length > 0) {
+        const totalSum = recipientItems.reduce((s, item) => s + parseNum(item.invoice_amount || item.fee_amount || item.amount || item['TOTAL INVOICE'] || item['NILAI FEE'] || item['JUMLAH FEE'] || 0), 0);
+
+        feeListEl.innerHTML += `
+          <div class="fee-summary-banner">
+            <div>
+              <div style="font-size:11px; color:var(--muted); font-weight:600;">TOTAL BREAKDOWN AMOUNT</div>
+              <div style="font-size:18px; font-weight:800; color:var(--green); margin-top:2px;">${fmtIDR(totalSum)}</div>
+            </div>
+            <span class="badge lunas" style="font-size:11px;">${recipientItems.length} Items</span>
+          </div>
+          <div style="font-size:12px; color:var(--muted); margin: 10px 0 6px 4px; font-weight:600;">Rincian Item Invoice Fee:</div>
+        `;
+
+        recipientItems.forEach(item => {
+          const invNum = item.invoice_number || item['NOMOR INVOICE'] || item['invoice_no'] || item['INVOICE NUMBER'] || item['NO INVOICE'] || '-';
+          const feeId = item.invoice_fee_id || item.fee_id || item['INVOICE FEE ID'] || item['FEE ID'] || item['ID FEE'] || item.id || '-';
+          const feeAmt = parseNum(item.invoice_amount || item.fee_amount || item.amount || item['TOTAL INVOICE'] || item['NILAI FEE'] || item['JUMLAH FEE'] || 0);
+          
+          // Added Invoice Payment DateLookup
+          const payDate = item['TANGGAL PEMBAYARAN'] || item['tanggal_pembayaran'] || item.payment_date || item.invoice_payment_date || item['TANGGAL BAYAR'] || item.transfer_date || '-';
+
+          feeListEl.innerHTML += `
+            <div class="row-card" style="background: var(--card2); margin-left: 8px;">
+              <div class="top">
+                <span style="font-weight:600; color:var(--txt);">${invNum}</span>
+                <span class="badge open" style="font-size:10px;">ID: ${feeId}</span>
+              </div>
+              <div class="mid" style="margin-top:4px;">
+                📅 Tanggal Pembayaran Invoice: <strong style="color:var(--txt);">${payDate}</strong>
+              </div>
+              <div class="top" style="margin-top:6px;">
+                <span style="font-weight:400; color:var(--muted); font-size:11.5px;">Invoice Fee Amount</span>
+                <span class="amount">${fmtIDR(feeAmt)}</span>
+              </div>
+            </div>
+          `;
+        });
+      }
+    }
   });
 }
 
