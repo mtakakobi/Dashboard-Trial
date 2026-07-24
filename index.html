@@ -55,6 +55,54 @@
   .filters-inline{display:flex;gap:6px;margin-top:4px;}
   .filters-inline button{flex:1;background:var(--card2);border:1px solid var(--border);color:var(--muted);font-size:11px;padding:5px;border-radius:8px;cursor:pointer;}
   #loading{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,17,21,0.85);z-index:999;display:flex;justify-content:center;align-items:center;font-size:14px;font-weight:600;}
+
+  /* Single Stacked Progress Bar Styles */
+  .progress-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 12px;
+  }
+  .progress-bar-container {
+    width: 100%;
+    height: 18px;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.4s ease;
+    border-radius: 9px 0 0 9px;
+  }
+  .progress-bar-remaining {
+    height: 100%;
+    background: var(--accent);
+    flex: 1;
+    opacity: 0.6;
+  }
+  .progress-legend {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 11.5px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .legend-dot.green { background: var(--green); }
+  .legend-dot.blue { background: var(--accent); opacity: 0.8; }
 </style>
 </head>
 <body>
@@ -92,12 +140,37 @@
       <div class="card"><div class="label">Total Fee Paid</div><div class="value green" id="ov-paid">-</div></div>
       <div class="card"><div class="label">Outstanding Fee</div><div class="value amber" id="ov-outstanding">-</div></div>
       <div class="card"><div class="label">Withdrawal Balance</div><div class="value" id="ov-balance">-</div></div>
-      <div class="card full"><div class="label">Total Withdrawal vs Total Transfer</div>
-        <div style="display:flex;justify-content:space-between;margin-top:4px;">
-          <div><div class="value" id="ov-withdrawal" style="font-size:15px">-</div><div class="label">Withdrawal</div></div>
-          <div><div class="value" id="ov-transfer" style="font-size:15px">-</div><div class="label">Transfer</div></div>
+      
+      <!-- Redesigned Single Bar Visualization Card -->
+      <div class="card full">
+        <div class="progress-card-header">
+          <div>
+            <div class="label">Total Withdrawal vs Total Transfer</div>
+            <div class="value" id="ov-withdrawal" style="font-size:16px;">-</div>
+          </div>
+          <div style="text-align:right;">
+            <span class="badge lunas" id="ov-transfer-pct">0% Transferred</span>
+            <div class="value green" id="ov-transfer" style="font-size:15px; margin-top:2px;">-</div>
+          </div>
+        </div>
+
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="ov-bar-fill" style="width: 0%;"></div>
+          <div class="progress-bar-remaining"></div>
+        </div>
+
+        <div class="progress-legend">
+          <div class="legend-item">
+            <span class="legend-dot green"></span>
+            <span style="color:var(--txt);">Transferred</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot blue"></span>
+            <span style="color:var(--muted);">Remaining Balance</span>
+          </div>
         </div>
       </div>
+
     </div>
     <h2>Fee per Recipient</h2>
     <div class="chart-wrap"><canvas id="chartRecipient" height="220"></canvas></div>
@@ -166,16 +239,11 @@ let allWdDates = [];
 
 let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, invFilterTglBayar, proofFilterTglWd;
 
-// Helper to safely parse numeric values from strings or numbers
 function parseNum(val) {
   if (val === null || val === undefined || val === '') return 0;
   if (typeof val === 'number') return isNaN(val) ? 0 : val;
-  // If string, handle formatted inputs like "Rp 15.000.000,00" or "15,000.00"
-  let str = val.toString().trim();
-  // Strip currency prefixes and letters
-  str = str.replace(/[^0-9.,-]/g, '');
+  let str = val.toString().trim().replace(/[^0-9.,-]/g, '');
   if (!str) return 0;
-  // Handle Indonesian dot formatting (e.g., 5.041.379.845)
   if (str.includes('.') && !str.includes(',')) {
     const parts = str.split('.');
     if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
@@ -329,19 +397,25 @@ function renderOverview(){
   const wdIdsSel = new Set(filteredWithdrawals.map(w=>w.withdrawal_id));
   const filteredTransfers = isFiltered ? DATA.transfers.filter(t=>wdIdsSel.has(t.withdrawal_id)) : DATA.transfers;
 
-  // Use parseNum to clean any formatted numeric strings from the sheets
   const total_entitlement = filteredFee.reduce((s,r)=>s + parseNum(r.amount), 0);
   const total_withdrawal = filteredWithdrawals.reduce((s,w)=>s + parseNum(w.withdrawal_amount), 0);
   const total_transfer = filteredTransfers.reduce((s,t)=>s + parseNum(t.transfer_amount || t.amount), 0);
   const withdrawal_balance = total_withdrawal - total_transfer;
   const outstanding_fee = Math.max(0, total_entitlement - total_transfer);
 
+  // Calculate percentage of Total Transfer against Total Withdrawal
+  const pctTransfer = total_withdrawal > 0 ? Math.min(100, Math.max(0, (total_transfer / total_withdrawal) * 100)) : 0;
+
   document.getElementById('ov-entitlement').textContent = fmtIDR(total_entitlement);
   document.getElementById('ov-paid').textContent = fmtIDR(total_transfer);
   document.getElementById('ov-outstanding').textContent = fmtIDR(outstanding_fee);
   document.getElementById('ov-balance').textContent = fmtIDR(withdrawal_balance);
+  
+  // Render Progress Bar Values
   document.getElementById('ov-withdrawal').textContent = fmtIDR(total_withdrawal);
   document.getElementById('ov-transfer').textContent = fmtIDR(total_transfer);
+  document.getElementById('ov-transfer-pct').textContent = `${pctTransfer.toFixed(1)}% Transferred`;
+  document.getElementById('ov-bar-fill').style.width = `${pctTransfer}%`;
 
   if (!chartRecipient) {
     chartRecipient = new Chart(document.getElementById('chartRecipient'), {
