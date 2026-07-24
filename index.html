@@ -164,21 +164,32 @@ let chartRecipient, chartPayStatus;
 const wdIdToDate = {};
 let allWdDates = [];
 
-// Variabel Global Filter DOM
 let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, invFilterTglBayar, proofFilterTglWd;
 
-function fmtIDR(n){
-  if(n === null || n === undefined || n === '') return 'Rp 0';
-  
-  // Handled formatted string inputs like "Rp 15.000.000" or "15.000,00"
-  if(typeof n === 'string'){
-    const cleaned = n.replace(/[^0-9]/g, '');
-    n = cleaned ? Number(cleaned) : 0;
+// Helper to safely parse numeric values from strings or numbers
+function parseNum(val) {
+  if (val === null || val === undefined || val === '') return 0;
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  // If string, handle formatted inputs like "Rp 15.000.000,00" or "15,000.00"
+  let str = val.toString().trim();
+  // Strip currency prefixes and letters
+  str = str.replace(/[^0-9.,-]/g, '');
+  if (!str) return 0;
+  // Handle Indonesian dot formatting (e.g., 5.041.379.845)
+  if (str.includes('.') && !str.includes(',')) {
+    const parts = str.split('.');
+    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
+      str = str.replace(/\./g, '');
+    }
+  } else if (str.includes('.') && str.includes(',')) {
+    str = str.replace(/\./g, '').replace(',', '.');
   }
-  
-  const num = Number(n);
-  if(isNaN(num)) return 'Rp 0';
-  
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
+}
+
+function fmtIDR(n){
+  const num = parseNum(n);
   return 'Rp ' + Math.round(num).toLocaleString('id-ID');
 }
 
@@ -191,7 +202,6 @@ function norm(s){
   return (s||'').toString().trim().toLowerCase().replace(/\s+/g, ' '); 
 }
 
-// Tab Navigation
 document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click', ()=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -201,7 +211,6 @@ document.querySelectorAll('.tab').forEach(t=>{
   });
 });
 
-// Load Data via JSONP
 function initDashboard() {
   const script = document.createElement('script');
   window.callback = function(data) {
@@ -246,7 +255,6 @@ function setupFiltersAndChips() {
     renderOverview();
   });
 
-  // Alokasi Penargetan DOM ke Variabel Global
   feeFilterTglWd = document.getElementById('feeFilterTglWd');
   feeFilterRecipient = document.getElementById('feeFilterRecipient');
   payFilterTglWd = document.getElementById('payFilterTglWd');
@@ -268,7 +276,6 @@ function setupFiltersAndChips() {
     proofFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
   });
 
-  // Hanya memuat nama penerima yang sudah memproses transaksi aktif agar dropdown rapi
   const activeRecipients = [...new Set(DATA.fee_by_recipient.map(r=>norm(r.name)).filter(Boolean))].sort();
   activeRecipients.forEach(rawName => {
     const displayName = rawName.toUpperCase();
@@ -278,14 +285,12 @@ function setupFiltersAndChips() {
   const invDates = [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN'] || i['tanggal_pembayaran']).filter(Boolean))].sort();
   invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
 
-  // Daftarkan Event Listener
   [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.addEventListener('change', renderFee));
   payFilterTglWd.addEventListener('change', renderPayment);
   selTglWithdrawal.addEventListener('change', renderWithdrawalTab);
   invFilterTglBayar.addEventListener('change', renderInvoice);
   proofFilterTglWd.addEventListener('change', renderProof);
 
-  // Fungsi Reset
   document.getElementById('feeReset').addEventListener('click', ()=>{ feeFilterTglWd.value=''; feeFilterRecipient.value=''; renderFee(); });
   document.getElementById('payReset').addEventListener('click', ()=>{ payFilterTglWd.value=''; renderPayment(); });
   document.getElementById('resetFilters').addEventListener('click', ()=>{ selTglWithdrawal.value=''; renderWithdrawalTab(); });
@@ -324,15 +329,12 @@ function renderOverview(){
   const wdIdsSel = new Set(filteredWithdrawals.map(w=>w.withdrawal_id));
   const filteredTransfers = isFiltered ? DATA.transfers.filter(t=>wdIdsSel.has(t.withdrawal_id)) : DATA.transfers;
 
-  const total_entitlement = filteredFee.reduce((s,r)=>s+Number(r.amount),0);
-  const total_withdrawal = filteredWithdrawals.reduce((s,w)=>s+Number(w.withdrawal_amount),0);
-  const total_transfer = filteredTransfers.reduce((s,t)=>s+Number(t.transfer_amount || t.amount || 0),0);
+  // Use parseNum to clean any formatted numeric strings from the sheets
+  const total_entitlement = filteredFee.reduce((s,r)=>s + parseNum(r.amount), 0);
+  const total_withdrawal = filteredWithdrawals.reduce((s,w)=>s + parseNum(w.withdrawal_amount), 0);
+  const total_transfer = filteredTransfers.reduce((s,t)=>s + parseNum(t.transfer_amount || t.amount), 0);
   const withdrawal_balance = total_withdrawal - total_transfer;
-
-  // CORRECTED: Calculate Outstanding Fee from unpaid/pending payment batches
-  const outstanding_fee = filteredPayments
-    .filter(p => !['lunas', 'transferred', 'done', 'completed'].includes(norm(p.status)))
-    .reduce((s, p) => s + Number(p.net_amount || 0), 0);
+  const outstanding_fee = Math.max(0, total_entitlement - total_transfer);
 
   document.getElementById('ov-entitlement').textContent = fmtIDR(total_entitlement);
   document.getElementById('ov-paid').textContent = fmtIDR(total_transfer);
@@ -346,7 +348,7 @@ function renderOverview(){
       type: 'bar',
       data: {
         labels: filteredFee.map(r=>r.name.toUpperCase()),
-        datasets: [{ data: filteredFee.map(r=>r.amount), backgroundColor: '#5b8def', borderRadius: 6 }]
+        datasets: [{ data: filteredFee.map(r=>parseNum(r.amount)), backgroundColor: '#5b8def', borderRadius: 6 }]
       },
       options: {
         indexAxis: 'y',
@@ -359,14 +361,14 @@ function renderOverview(){
     });
   } else {
     chartRecipient.data.labels = filteredFee.map(r=>r.name.toUpperCase());
-    chartRecipient.data.datasets[0].data = filteredFee.map(r=>r.amount);
+    chartRecipient.data.datasets[0].data = filteredFee.map(r=>parseNum(r.amount));
     chartRecipient.update('none');
   }
 
   const payStatusCounts = {};
   filteredPayments.forEach(p=>{
     const s = p.status || 'OPEN';
-    payStatusCounts[s] = (payStatusCounts[s]||0) + Number(p.net_amount || 0);
+    payStatusCounts[s] = (payStatusCounts[s]||0) + parseNum(p.net_amount);
   });
 
   if (!chartPayStatus) {
@@ -458,7 +460,6 @@ function renderInvoice(){
   invListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
   
   filtered.forEach(i=>{
-    // Added property fallback key lookups
     const totalVal = i['TOTAL INVOICE'] ?? i['total_invoice'] ?? i['TOTAL'] ?? i['total'] ?? 0;
     const invNum = i.invoice_number || i['NOMOR INVOICE'] || i['invoice_no'] || '';
     const status = i.STATUS || i['status'] || '';
@@ -504,5 +505,3 @@ initDashboard();
 </script>
 </body>
 </html>
-
-```
