@@ -145,14 +145,14 @@
   .section h2{font-size: clamp(13px, 1.8vw, 16px); margin:18px 0 10px; color:var(--txt);}
   .chart-wrap{background:var(--card); border:1px solid var(--border); border-radius:14px; padding: clamp(10px, 1.5vw, 16px); margin-bottom:16px; transition: background 0.3s ease, border-color 0.3s ease;}
   
-  /* Scrollable Progress Container */
+  /* Scrollable Progress Container fixed to ~5 visible items height */
   .scrollable-progress-wrap {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: clamp(10px, 1.5vw, 16px);
     margin-bottom: 16px;
-    max-height: 380px;
+    max-height: 390px;
     overflow-y: auto;
   }
   .scrollable-progress-wrap::-webkit-scrollbar {
@@ -167,11 +167,13 @@
   .row-card .top{display:flex; justify-content:space-between; font-size: clamp(12px, 1.5vw, 14px); font-weight:600; margin-bottom:4px;}
   .row-card .mid{font-size: clamp(11px, 1.3vw, 12.5px); color:var(--muted); margin-bottom:6px;}
   
-  .badge{display:inline-block; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:600;}
+  .badge{display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; cursor:pointer; user-select:none; transition: all 0.2s ease;}
+  .badge.active-filter { outline: 2px solid var(--accent); box-shadow: 0 0 8px rgba(91, 141, 239, 0.4); transform: scale(1.04); }
   .badge.lunas, .badge.transferred, .badge.done, .badge.completed, .badge.balanced{background:rgba(61,220,151,0.15); color:var(--green);}
   .badge.open, .badge.partial{background:rgba(255,184,77,0.15); color:var(--amber);}
   .badge.belum, .badge.outstanding{background:rgba(255,107,107,0.15); color:var(--red);}
   .badge.overpaid{background:rgba(255,184,77,0.2); color:var(--amber); border:1px solid var(--amber);}
+  
   .amount{font-weight:700;}
   footer{text-align:center; color:var(--muted); font-size:11px; padding:20px 0;}
   
@@ -331,13 +333,13 @@
       </div>
     </div>
 
-    <h2>Top Priority Fee per Invoice (Overpaid & Largest Outstanding)</h2>
-    <!-- Invoice Count Summary Metrics Banner -->
+    <h2>Priority Fee per Invoice</h2>
+    <!-- Interactive Clickable Invoice Status Summary Banner -->
     <div id="invoiceSummaryMetrics" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;"></div>
     <div class="scrollable-progress-wrap" id="invoiceProgressList"></div>
 
-    <h2>Top Priority Fee per Recipient (Overpaid & Largest Outstanding)</h2>
-    <!-- Recipient Count Summary Metrics Banner -->
+    <h2>Priority Fee per Recipient</h2>
+    <!-- Interactive Clickable Recipient Status Summary Banner -->
     <div id="recipientSummaryMetrics" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;"></div>
     <div class="scrollable-progress-wrap" id="recipientProgressList"></div>
   </section>
@@ -400,6 +402,10 @@ let DATA = {};
 let chartPayStatus;
 const wdIdToDate = {};
 let allWdDates = [];
+
+// Track selected status filters for interactive clicks ('ALL', 'UNPAID', 'PARTIAL', 'OVERPAID', 'LUNAS')
+let activeInvoiceStatusFilter = 'ALL';
+let activeRecipientStatusFilter = 'ALL';
 
 let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, invFilterTglBayar, proofFilterTglWd;
 
@@ -668,129 +674,11 @@ function renderOverview(){
   document.getElementById('ov-transfer-pct').textContent = `${pctTransfer.toFixed(1)}% Transferred`;
   document.getElementById('ov-bar-fill').style.width = `${pctTransfer}%`;
 
-  // Render Invoice Progress Bars (Overpaid First, then Largest Outstanding)
+  // Render Invoice Progress Bars (Interactive Filtering)
   renderInvoiceProgressList(total_paid_work_calc, total_entitlement);
 
-  // Render Recipient Progress Cards
-  const recipientDataMap = {};
-  filteredFee.forEach(r => {
-    const key = getRecipientName(r);
-    recipientDataMap[key] = {
-      name: (r.name || r.recipient_name || r.penerima || '').toUpperCase(),
-      totalFee: parseNum(r.amount),
-      paidFee: 0
-    };
-  });
-
-  filteredPayments.forEach(p => {
-    const key = getRecipientName(p);
-    if (recipientDataMap[key]) {
-      recipientDataMap[key].paidFee += parseNum(p.net_amount);
-    } else if (key) {
-      recipientDataMap[key] = {
-        name: (p.recipient_name || p.penerima || '').toUpperCase(),
-        totalFee: 0,
-        paidFee: parseNum(p.net_amount)
-      };
-    }
-  });
-
-  // Track recipient counts across status categories
-  let totalRecipientCount = 0;
-  let unpaidRecipientCount = 0;   // Needs payment / has outstanding
-  let partialRecipientCount = 0;  // Partially paid
-  let overpaidRecipientCount = 0; // Flagged overpaid
-  let lunasRecipientCount = 0;    // Fully settled
-
-  let recipientList = Object.values(recipientDataMap).map(r => {
-    const diff = r.paidFee - r.totalFee;
-    const isOverpaid = diff > 1;
-    const outstanding = Math.max(0, r.totalFee - r.paidFee);
-    const isLunas = outstanding < 1 && !isOverpaid;
-    const isPartial = r.paidFee > 1 && outstanding >= 1 && !isOverpaid;
-    const pctPaid = r.totalFee > 0 ? (r.paidFee / r.totalFee) * 100 : (r.paidFee > 0 ? 100 : 0);
-
-    totalRecipientCount++;
-    if (isOverpaid) {
-      overpaidRecipientCount++;
-    } else if (isLunas) {
-      lunasRecipientCount++;
-    } else {
-      unpaidRecipientCount++;
-      if (isPartial) {
-        partialRecipientCount++;
-      }
-    }
-    
-    return { ...r, diff, isOverpaid, outstanding, isLunas, isPartial, pctPaid };
-  });
-
-  // Display summary metrics banner above Recipient progress list
-  const recMetricsEl = document.getElementById('recipientSummaryMetrics');
-  if (recMetricsEl) {
-    recMetricsEl.innerHTML = `
-      <span class="badge" style="background:var(--card2); border:1px solid var(--border); color:var(--txt);">Total: ${totalRecipientCount} Recipients</span>
-      <span class="badge open">Needs Payment: ${unpaidRecipientCount}</span>
-      <span class="badge partial">Partial Paid: ${partialRecipientCount}</span>
-      <span class="badge overpaid">Overpaid: ${overpaidRecipientCount}</span>
-      <span class="badge lunas">LUNAS: ${lunasRecipientCount}</span>
-    `;
-  }
-
-  // PRIORITY SORT: Overpaid first, then Largest Outstanding to Smallest
-  recipientList.sort((a, b) => {
-    if (a.isOverpaid && !b.isOverpaid) return -1;
-    if (!a.isOverpaid && b.isOverpaid) return 1;
-    if (a.isOverpaid && b.isOverpaid) return b.diff - a.diff;
-    return b.outstanding - a.outstanding;
-  });
-
-  // Take Top 5 Priority Items
-  let top5Recipients = recipientList.slice(0, 5);
-
-  const progressListEl = document.getElementById('recipientProgressList');
-  progressListEl.innerHTML = '';
-
-  if(top5Recipients.length === 0) {
-    progressListEl.innerHTML = '<div class="empty-state">Tidak ada data recipient</div>';
-  } else {
-    top5Recipients.forEach(r => {
-      let statusBadge = '';
-      if (r.isOverpaid) {
-        statusBadge = '<span class="badge overpaid">⚠️ OVERPAID</span>';
-      } else if (r.isLunas) {
-        statusBadge = '<span class="badge lunas">LUNAS</span>';
-      } else if (r.isPartial) {
-        statusBadge = `<span class="badge partial">PARTIAL (${r.pctPaid.toFixed(1)}%)</span>`;
-      } else {
-        statusBadge = `<span class="badge outstanding">${r.pctPaid.toFixed(1)}% PAID</span>`;
-      }
-
-      const balanceText = r.isOverpaid 
-        ? `Overpaid: <strong style="color:var(--amber);">${fmtIDR(r.diff)}</strong>` 
-        : `Outstanding: <strong style="color:${r.isLunas ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(r.outstanding)}</strong>`;
-
-      progressListEl.innerHTML += `
-        <div class="progress-card-item ${r.outstanding > 1 ? 'has-outstanding' : ''} ${r.isOverpaid ? 'has-overpaid' : ''}">
-          <div class="progress-card-header-inner">
-            <span>${r.name}</span>
-            ${statusBadge}
-          </div>
-          
-          <div class="progress-bar-container">
-            <div class="progress-bar-fill" style="width: ${Math.min(100, r.pctPaid)}%;"></div>
-            ${r.pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
-          </div>
-
-          <div class="progress-card-caption">
-            <span>Total Fee: <strong>${fmtIDR(r.totalFee)}</strong></span>
-            <span>Paid (Net): <strong style="color:var(--green);">${fmtIDR(r.paidFee)}</strong></span>
-            <span>${balanceText}</span>
-          </div>
-        </div>
-      `;
-    });
-  }
+  // Render Recipient Progress Cards (Interactive Filtering)
+  renderRecipientProgressList(filteredFee, filteredPayments);
 
   const payStatusCounts = {};
   filteredPayments.forEach(p=>{
@@ -850,12 +738,11 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
 
   const overallPaymentRatio = totalFeeEntitlement > 0 ? totalNetPaid / totalFeeEntitlement : 0;
 
-  // Variables to track invoice counts across all categories
   let totalInvoiceCount = 0;
-  let unpaidInvoiceCount = 0;   // Needs payment / has outstanding
-  let partialInvoiceCount = 0;  // Partially paid
-  let overpaidInvoiceCount = 0; // Flagged overpaid
-  let lunasInvoiceCount = 0;    // Fully settled
+  let unpaidInvoiceCount = 0;   
+  let partialInvoiceCount = 0;  
+  let overpaidInvoiceCount = 0; 
+  let lunasInvoiceCount = 0;    
 
   let invList = Object.values(invMap).map(inv => {
     const paidForInv = inv.total_fee * overallPaymentRatio;
@@ -890,34 +777,41 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
     };
   });
 
-  // Display summary metrics banner above progress list
+  // Render Interactive Clickable Status Metrics Banner
   if (metricsEl) {
     metricsEl.innerHTML = `
-      <span class="badge" style="background:var(--card2); border:1px solid var(--border); color:var(--txt);">Total: ${totalInvoiceCount} Invoices</span>
-      <span class="badge open">Needs Payment: ${unpaidInvoiceCount}</span>
-      <span class="badge partial">Partial Paid: ${partialInvoiceCount}</span>
-      <span class="badge overpaid">Overpaid: ${overpaidInvoiceCount}</span>
-      <span class="badge lunas">LUNAS: ${lunasInvoiceCount}</span>
+      <span class="badge ${activeInvoiceStatusFilter === 'ALL' ? 'active-filter' : ''}" style="background:var(--card2); border:1px solid var(--border); color:var(--txt);" onclick="setInvoiceFilter('ALL')">Total: ${totalInvoiceCount} Invoices</span>
+      <span class="badge open ${activeInvoiceStatusFilter === 'UNPAID' ? 'active-filter' : ''}" onclick="setInvoiceFilter('UNPAID')">Needs Payment: ${unpaidInvoiceCount}</span>
+      <span class="badge partial ${activeInvoiceStatusFilter === 'PARTIAL' ? 'active-filter' : ''}" onclick="setInvoiceFilter('PARTIAL')">Partial Paid: ${partialInvoiceCount}</span>
+      <span class="badge overpaid ${activeInvoiceStatusFilter === 'OVERPAID' ? 'active-filter' : ''}" onclick="setInvoiceFilter('OVERPAID')">Overpaid: ${overpaidInvoiceCount}</span>
+      <span class="badge lunas ${activeInvoiceStatusFilter === 'LUNAS' ? 'active-filter' : ''}" onclick="setInvoiceFilter('LUNAS')">LUNAS: ${lunasInvoiceCount}</span>
     `;
   }
 
-  // PRIORITY SORT: Overpaid first, then Largest Outstanding to Smallest
-  invList.sort((a, b) => {
+  // Filter based on active clicked status
+  let displayList = invList.filter(inv => {
+    if (activeInvoiceStatusFilter === 'UNPAID') return !inv.isLunas;
+    if (activeInvoiceStatusFilter === 'PARTIAL') return inv.isPartial;
+    if (activeInvoiceStatusFilter === 'OVERPAID') return inv.isOverpaid;
+    if (activeInvoiceStatusFilter === 'LUNAS') return inv.isLunas;
+    return true; // 'ALL'
+  });
+
+  // Sort: Overpaid first, then Largest Outstanding to Smallest
+  displayList.sort((a, b) => {
     if (a.isOverpaid && !b.isOverpaid) return -1;
     if (!a.isOverpaid && b.isOverpaid) return 1;
     if (a.isOverpaid && b.isOverpaid) return b.overpaidAmt - a.overpaidAmt;
     return b.outstandingForInv - a.outstandingForInv;
   });
 
-  // Take Top 5 Priority Invoices
-  let top5Invoices = invList.slice(0, 5);
-
-  if (top5Invoices.length === 0) {
-    invProgressListEl.innerHTML = '<div class="empty-state">Tidak ada data invoice fee</div>';
+  if (displayList.length === 0) {
+    invProgressListEl.innerHTML = '<div class="empty-state">Tidak ada invoice untuk status filter ini</div>';
     return;
   }
 
-  top5Invoices.forEach(inv => {
+  // Render ALL matching items (scrollable container shows ~5 items initially)
+  displayList.forEach(inv => {
     let badgeHtml = '';
     if (inv.isOverpaid) {
       badgeHtml = '<span class="badge overpaid">⚠️ OVERPAID</span>';
@@ -953,6 +847,145 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
       </div>
     `;
   });
+}
+
+function renderRecipientProgressList(filteredFee, filteredPayments) {
+  const recipientDataMap = {};
+  filteredFee.forEach(r => {
+    const key = getRecipientName(r);
+    recipientDataMap[key] = {
+      name: (r.name || r.recipient_name || r.penerima || '').toUpperCase(),
+      totalFee: parseNum(r.amount),
+      paidFee: 0
+    };
+  });
+
+  filteredPayments.forEach(p => {
+    const key = getRecipientName(p);
+    if (recipientDataMap[key]) {
+      recipientDataMap[key].paidFee += parseNum(p.net_amount);
+    } else if (key) {
+      recipientDataMap[key] = {
+        name: (p.recipient_name || p.penerima || '').toUpperCase(),
+        totalFee: 0,
+        paidFee: parseNum(p.net_amount)
+      };
+    }
+  });
+
+  let totalRecipientCount = 0;
+  let unpaidRecipientCount = 0;   
+  let partialRecipientCount = 0;  
+  let overpaidRecipientCount = 0; 
+  let lunasRecipientCount = 0;    
+
+  let recipientList = Object.values(recipientDataMap).map(r => {
+    const diff = r.paidFee - r.totalFee;
+    const isOverpaid = diff > 1;
+    const outstanding = Math.max(0, r.totalFee - r.paidFee);
+    const isLunas = outstanding < 1 && !isOverpaid;
+    const isPartial = r.paidFee > 1 && outstanding >= 1 && !isOverpaid;
+    const pctPaid = r.totalFee > 0 ? (r.paidFee / r.totalFee) * 100 : (r.paidFee > 0 ? 100 : 0);
+
+    totalRecipientCount++;
+    if (isOverpaid) {
+      overpaidRecipientCount++;
+    } else if (isLunas) {
+      lunasRecipientCount++;
+    } else {
+      unpaidRecipientCount++;
+      if (isPartial) {
+        partialRecipientCount++;
+      }
+    }
+    
+    return { ...r, diff, isOverpaid, outstanding, isLunas, isPartial, pctPaid };
+  });
+
+  // Render Interactive Clickable Status Metrics Banner for Recipients
+  const recMetricsEl = document.getElementById('recipientSummaryMetrics');
+  if (recMetricsEl) {
+    recMetricsEl.innerHTML = `
+      <span class="badge ${activeRecipientStatusFilter === 'ALL' ? 'active-filter' : ''}" style="background:var(--card2); border:1px solid var(--border); color:var(--txt);" onclick="setRecipientFilter('ALL')">Total: ${totalRecipientCount} Recipients</span>
+      <span class="badge open ${activeRecipientStatusFilter === 'UNPAID' ? 'active-filter' : ''}" onclick="setRecipientFilter('UNPAID')">Needs Payment: ${unpaidRecipientCount}</span>
+      <span class="badge partial ${activeRecipientStatusFilter === 'PARTIAL' ? 'active-filter' : ''}" onclick="setRecipientFilter('PARTIAL')">Partial Paid: ${partialRecipientCount}</span>
+      <span class="badge overpaid ${activeRecipientStatusFilter === 'OVERPAID' ? 'active-filter' : ''}" onclick="setRecipientFilter('OVERPAID')">Overpaid: ${overpaidRecipientCount}</span>
+      <span class="badge lunas ${activeRecipientStatusFilter === 'LUNAS' ? 'active-filter' : ''}" onclick="setRecipientFilter('LUNAS')">LUNAS: ${lunasRecipientCount}</span>
+    `;
+  }
+
+  // Filter based on active clicked status
+  let displayList = recipientList.filter(r => {
+    if (activeRecipientStatusFilter === 'UNPAID') return !r.isLunas;
+    if (activeRecipientStatusFilter === 'PARTIAL') return r.isPartial;
+    if (activeRecipientStatusFilter === 'OVERPAID') return r.isOverpaid;
+    if (activeRecipientStatusFilter === 'LUNAS') return r.isLunas;
+    return true; // 'ALL'
+  });
+
+  // Sort: Overpaid first, then Largest Outstanding to Smallest
+  displayList.sort((a, b) => {
+    if (a.isOverpaid && !b.isOverpaid) return -1;
+    if (!a.isOverpaid && b.isOverpaid) return 1;
+    if (a.isOverpaid && b.isOverpaid) return b.diff - a.diff;
+    return b.outstanding - a.outstanding;
+  });
+
+  const progressListEl = document.getElementById('recipientProgressList');
+  progressListEl.innerHTML = '';
+
+  if(displayList.length === 0) {
+    progressListEl.innerHTML = '<div class="empty-state">Tidak ada recipient untuk status filter ini</div>';
+    return;
+  }
+
+  // Render ALL matching recipient items (scrollable container shows ~5 items initially)
+  displayList.forEach(r => {
+    let statusBadge = '';
+    if (r.isOverpaid) {
+      statusBadge = '<span class="badge overpaid">⚠️ OVERPAID</span>';
+    } else if (r.isLunas) {
+      statusBadge = '<span class="badge lunas">LUNAS</span>';
+    } else if (r.isPartial) {
+      statusBadge = `<span class="badge partial">PARTIAL (${r.pctPaid.toFixed(1)}%)</span>`;
+    } else {
+      statusBadge = `<span class="badge outstanding">${r.pctPaid.toFixed(1)}% PAID</span>`;
+    }
+
+    const balanceText = r.isOverpaid 
+      ? `Overpaid: <strong style="color:var(--amber);">${fmtIDR(r.diff)}</strong>` 
+      : `Outstanding: <strong style="color:${r.isLunas ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(r.outstanding)}</strong>`;
+
+    progressListEl.innerHTML += `
+      <div class="progress-card-item ${r.outstanding > 1 ? 'has-outstanding' : ''} ${r.isOverpaid ? 'has-overpaid' : ''}">
+        <div class="progress-card-header-inner">
+          <span>${r.name}</span>
+          ${statusBadge}
+        </div>
+        
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" style="width: ${Math.min(100, r.pctPaid)}%;"></div>
+          ${r.pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
+        </div>
+
+        <div class="progress-card-caption">
+          <span>Total Fee: <strong>${fmtIDR(r.totalFee)}</strong></span>
+          <span>Paid (Net): <strong style="color:var(--green);">${fmtIDR(r.paidFee)}</strong></span>
+          <span>${balanceText}</span>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function setInvoiceFilter(status) {
+  activeInvoiceStatusFilter = status;
+  renderOverview();
+}
+
+function setRecipientFilter(status) {
+  activeRecipientStatusFilter = status;
+  renderOverview();
 }
 
 function renderFee(){
@@ -1122,7 +1155,7 @@ function renderInvoice(){
 }
 
 function renderProof(){
-  const tgl = proofFilterTglWd.value;
+  const tgl = proofFilterTglWdß.value;
   const filtered = tgl ? (DATA.transfers||[]).filter(t=>wdIdToDate[t.withdrawal_id]===tgl) : (DATA.transfers||[]);
   const proofListEl = document.getElementById('proofList');
   proofListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
