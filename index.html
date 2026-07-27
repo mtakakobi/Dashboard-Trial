@@ -331,10 +331,10 @@
       </div>
     </div>
 
-    <h2>Outstanding Payment per Invoice</h2>
+    <h2>Top Outstanding Fee per Invoice (Unpaid / Partial)</h2>
     <div class="scrollable-progress-wrap" id="invoiceProgressList"></div>
 
-    <h2>Outstanding Fee per Recipient</h2>
+    <h2>Top Outstanding Fee per Recipient (Unpaid / Partial)</h2>
     <div class="scrollable-progress-wrap" id="recipientProgressList"></div>
   </section>
 
@@ -664,10 +664,10 @@ function renderOverview(){
   document.getElementById('ov-transfer-pct').textContent = `${pctTransfer.toFixed(1)}% Transferred`;
   document.getElementById('ov-bar-fill').style.width = `${pctTransfer}%`;
 
-  // Render Invoice Progress Bars (Top 5 Decreasing %)
+  // Render Invoice Progress Bars (Filtered for UNPAID/PARTIAL, Top 5 Decreasing %)
   renderInvoiceProgressList(total_paid_work_calc, total_entitlement);
 
-  // Render Recipient Progress Cards (Top 5 Decreasing %)
+  // Render Recipient Progress Cards (Filtered for UNPAID/PARTIAL, Top 5 Decreasing %)
   const recipientDataMap = {};
   filteredFee.forEach(r => {
     const key = getRecipientName(r);
@@ -692,44 +692,51 @@ function renderOverview(){
   });
 
   let recipientList = Object.values(recipientDataMap).map(r => {
+    const diff = r.paidFee - r.totalFee;
+    const isOverpaid = diff > 1;
+    const outstanding = Math.max(0, r.totalFee - r.paidFee);
+    const isLunas = outstanding < 1 && !isOverpaid;
     const pctPaid = r.totalFee > 0 ? (r.paidFee / r.totalFee) * 100 : (r.paidFee > 0 ? 100 : 0);
-    return { ...r, pctPaid };
+    
+    return { ...r, diff, isOverpaid, outstanding, isLunas, pctPaid };
   });
 
+  // FILTER: Only show items that are NOT LUNAS (Outstanding or Overpaid)
+  let unpaidRecipients = recipientList.filter(r => !r.isLunas);
+
+  // Fallback: If no unpaid items exist, show top 5 overall
+  if (unpaidRecipients.length === 0) {
+    unpaidRecipients = recipientList;
+  }
+
   // Sort Decreasing by Percentage
-  recipientList.sort((a, b) => b.pctPaid - a.pctPaid);
+  unpaidRecipients.sort((a, b) => b.pctPaid - a.pctPaid);
 
   // Take Top 5
-  recipientList = recipientList.slice(0, 5);
+  unpaidRecipients = unpaidRecipients.slice(0, 5);
 
   const progressListEl = document.getElementById('recipientProgressList');
   progressListEl.innerHTML = '';
 
-  if(recipientList.length === 0) {
-    progressListEl.innerHTML = '<div class="empty-state">Tidak ada data recipient</div>';
+  if(unpaidRecipients.length === 0) {
+    progressListEl.innerHTML = '<div class="empty-state">Semua fee recipient telah LUNAS 🎉</div>';
   } else {
-    recipientList.forEach(r => {
-      const diff = r.paidFee - r.totalFee;
-      const isOverpaid = diff > 1;
-      const outstanding = Math.max(0, r.totalFee - r.paidFee);
-      const isSettled = outstanding === 0 && !isOverpaid;
-      const hasOutstanding = outstanding > 1;
-
+    unpaidRecipients.forEach(r => {
       let statusBadge = '';
-      if (isOverpaid) {
+      if (r.isOverpaid) {
         statusBadge = '<span class="badge overpaid">⚠️ OVERPAID</span>';
-      } else if (isSettled) {
+      } else if (r.isLunas) {
         statusBadge = '<span class="badge lunas">LUNAS</span>';
       } else {
         statusBadge = `<span class="badge outstanding">${r.pctPaid.toFixed(1)}% PAID</span>`;
       }
 
-      const balanceText = isOverpaid 
-        ? `Overpaid: <strong style="color:var(--amber);">${fmtIDR(diff)}</strong>` 
-        : `Outstanding: <strong style="color:${isSettled ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(outstanding)}</strong>`;
+      const balanceText = r.isOverpaid 
+        ? `Overpaid: <strong style="color:var(--amber);">${fmtIDR(r.diff)}</strong>` 
+        : `Outstanding: <strong style="color:${r.isLunas ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(r.outstanding)}</strong>`;
 
       progressListEl.innerHTML += `
-        <div class="progress-card-item ${hasOutstanding ? 'has-outstanding' : ''} ${isOverpaid ? 'has-overpaid' : ''}">
+        <div class="progress-card-item ${r.outstanding > 1 ? 'has-outstanding' : ''} ${r.isOverpaid ? 'has-overpaid' : ''}">
           <div class="progress-card-header-inner">
             <span>${r.name}</span>
             ${statusBadge}
@@ -810,28 +817,43 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
     const paidForInv = inv.total_fee * overallPaymentRatio;
     const outstandingForInv = Math.max(0, inv.total_fee - paidForInv);
     const pctPaid = inv.total_fee > 0 ? (paidForInv / inv.total_fee) * 100 : 0;
+    const isLunas = outstandingForInv < 1;
+    
     return {
       ...inv,
       paidForInv,
       outstandingForInv,
-      pctPaid
+      pctPaid,
+      isLunas
     };
   });
 
+  // FILTER: Only show invoices that are NOT LUNAS
+  let unpaidInvoices = invList.filter(inv => !inv.isLunas);
+
+  // Fallback: If all invoices are fully LUNAS, display top 5 overall
+  if (unpaidInvoices.length === 0) {
+    unpaidInvoices = invList;
+  }
+
   // Sort Decreasing by Percentage
-  invList.sort((a, b) => b.pctPaid - a.pctPaid);
+  unpaidInvoices.sort((a, b) => b.pctPaid - a.pctPaid);
 
   // Take Top 5
-  invList = invList.slice(0, 5);
+  unpaidInvoices = unpaidInvoices.slice(0, 5);
 
-  invList.forEach(inv => {
-    const isLunas = inv.outstandingForInv < 1;
-    let badgeHtml = isLunas 
+  if (unpaidInvoices.length === 0) {
+    invProgressListEl.innerHTML = '<div class="empty-state">Semua fee invoice telah LUNAS 🎉</div>';
+    return;
+  }
+
+  unpaidInvoices.forEach(inv => {
+    let badgeHtml = inv.isLunas 
       ? '<span class="badge lunas">LUNAS</span>' 
       : `<span class="badge outstanding">${inv.pctPaid.toFixed(1)}% PAID</span>`;
 
     invProgressListEl.innerHTML += `
-      <div class="progress-card-item ${!isLunas ? 'has-outstanding' : ''}">
+      <div class="progress-card-item ${!inv.isLunas ? 'has-outstanding' : ''}">
         <div class="progress-card-header-inner">
           <span>🧾 ${inv.invoice_number}</span>
           ${badgeHtml}
@@ -845,7 +867,7 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
         <div class="progress-card-caption">
           <span>Fee Entitlement: <strong>${fmtIDR(inv.total_fee)}</strong></span>
           <span>Paid (Net Est.): <strong style="color:var(--green);">${fmtIDR(inv.paidForInv)}</strong></span>
-          <span>Outstanding: <strong style="color:${isLunas ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(inv.outstandingForInv)}</strong></span>
+          <span>Outstanding: <strong style="color:${inv.isLunas ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(inv.outstandingForInv)}</strong></span>
         </div>
       </div>
     `;
