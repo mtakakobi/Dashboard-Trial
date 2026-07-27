@@ -337,6 +337,8 @@
     <div class="scrollable-progress-wrap" id="invoiceProgressList"></div>
 
     <h2>Top Priority Fee per Recipient (Overpaid & Largest Outstanding)</h2>
+    <!-- Recipient Count Summary Metrics Banner -->
+    <div id="recipientSummaryMetrics" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;"></div>
     <div class="scrollable-progress-wrap" id="recipientProgressList"></div>
   </section>
 
@@ -693,15 +695,47 @@ function renderOverview(){
     }
   });
 
+  // Track recipient counts across status categories
+  let totalRecipientCount = 0;
+  let unpaidRecipientCount = 0;   // Needs payment / has outstanding
+  let partialRecipientCount = 0;  // Partially paid
+  let overpaidRecipientCount = 0; // Flagged overpaid
+  let lunasRecipientCount = 0;    // Fully settled
+
   let recipientList = Object.values(recipientDataMap).map(r => {
     const diff = r.paidFee - r.totalFee;
     const isOverpaid = diff > 1;
     const outstanding = Math.max(0, r.totalFee - r.paidFee);
     const isLunas = outstanding < 1 && !isOverpaid;
+    const isPartial = r.paidFee > 1 && outstanding >= 1 && !isOverpaid;
     const pctPaid = r.totalFee > 0 ? (r.paidFee / r.totalFee) * 100 : (r.paidFee > 0 ? 100 : 0);
+
+    totalRecipientCount++;
+    if (isOverpaid) {
+      overpaidRecipientCount++;
+    } else if (isLunas) {
+      lunasRecipientCount++;
+    } else {
+      unpaidRecipientCount++;
+      if (isPartial) {
+        partialRecipientCount++;
+      }
+    }
     
-    return { ...r, diff, isOverpaid, outstanding, isLunas, pctPaid };
+    return { ...r, diff, isOverpaid, outstanding, isLunas, isPartial, pctPaid };
   });
+
+  // Display summary metrics banner above Recipient progress list
+  const recMetricsEl = document.getElementById('recipientSummaryMetrics');
+  if (recMetricsEl) {
+    recMetricsEl.innerHTML = `
+      <span class="badge" style="background:var(--card2); border:1px solid var(--border); color:var(--txt);">Total: ${totalRecipientCount} Recipients</span>
+      <span class="badge open">Needs Payment: ${unpaidRecipientCount}</span>
+      <span class="badge partial">Partial Paid: ${partialRecipientCount}</span>
+      <span class="badge overpaid">Overpaid: ${overpaidRecipientCount}</span>
+      <span class="badge lunas">LUNAS: ${lunasRecipientCount}</span>
+    `;
+  }
 
   // PRIORITY SORT: Overpaid first, then Largest Outstanding to Smallest
   recipientList.sort((a, b) => {
@@ -726,6 +760,8 @@ function renderOverview(){
         statusBadge = '<span class="badge overpaid">⚠️ OVERPAID</span>';
       } else if (r.isLunas) {
         statusBadge = '<span class="badge lunas">LUNAS</span>';
+      } else if (r.isPartial) {
+        statusBadge = `<span class="badge partial">PARTIAL (${r.pctPaid.toFixed(1)}%)</span>`;
       } else {
         statusBadge = `<span class="badge outstanding">${r.pctPaid.toFixed(1)}% PAID</span>`;
       }
