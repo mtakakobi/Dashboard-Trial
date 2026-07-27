@@ -124,8 +124,14 @@
 
   .overview-metrics-col {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: clamp(8px, 1vw, 12px);
+  }
+
+  @media (max-width: 480px) {
+    .overview-metrics-col {
+      grid-template-columns: 1fr;
+    }
   }
 
   .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding: clamp(10px, 1.5vw, 16px); transition: background 0.3s ease, border-color 0.3s ease;}
