@@ -144,6 +144,25 @@
   
   .section h2{font-size: clamp(13px, 1.8vw, 16px); margin:18px 0 10px; color:var(--txt);}
   .chart-wrap{background:var(--card); border:1px solid var(--border); border-radius:14px; padding: clamp(10px, 1.5vw, 16px); margin-bottom:16px; transition: background 0.3s ease, border-color 0.3s ease;}
+  
+  /* Scrollable Progress Container */
+  .scrollable-progress-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: clamp(10px, 1.5vw, 16px);
+    margin-bottom: 16px;
+    max-height: 380px;
+    overflow-y: auto;
+  }
+  .scrollable-progress-wrap::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollable-progress-wrap::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+
   .row-card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px;}
   .row-card .top{display:flex; justify-content:space-between; font-size: clamp(12px, 1.5vw, 14px); font-weight:600; margin-bottom:4px;}
   .row-card .mid{font-size: clamp(11px, 1.3vw, 12.5px); color:var(--muted); margin-bottom:6px;}
@@ -312,11 +331,11 @@
       </div>
     </div>
 
-    <h2>Progress Pembayaran Fee per Invoice</h2>
-    <div class="chart-wrap" id="invoiceProgressList"></div>
+    <h2>Outstanding Payment per Invoice</h2>
+    <div class="scrollable-progress-wrap" id="invoiceProgressList"></div>
 
-    <h2>Progress Pembayaran Fee per Recipient</h2>
-    <div class="chart-wrap" id="recipientProgressList"></div>
+    <h2>Outstanding Fee per Recipient</h2>
+    <div class="scrollable-progress-wrap" id="recipientProgressList"></div>
   </section>
 
   <section class="section" id="fee">
@@ -645,10 +664,10 @@ function renderOverview(){
   document.getElementById('ov-transfer-pct').textContent = `${pctTransfer.toFixed(1)}% Transferred`;
   document.getElementById('ov-bar-fill').style.width = `${pctTransfer}%`;
 
-  // Render Invoice Progress Bars
+  // Render Invoice Progress Bars (Top 5 Decreasing %)
   renderInvoiceProgressList(total_paid_work_calc, total_entitlement);
 
-  // Render Recipient Progress Cards
+  // Render Recipient Progress Cards (Top 5 Decreasing %)
   const recipientDataMap = {};
   filteredFee.forEach(r => {
     const key = getRecipientName(r);
@@ -672,17 +691,16 @@ function renderOverview(){
     }
   });
 
-  const recipientList = Object.values(recipientDataMap);
-
-  recipientList.sort((a, b) => {
-    const absDiffA = Math.abs(a.paidFee - a.totalFee);
-    const absDiffB = Math.abs(b.paidFee - b.totalFee);
-
-    if (absDiffB !== absDiffA) {
-      return absDiffB - absDiffA;
-    }
-    return a.name.localeCompare(b.name);
+  let recipientList = Object.values(recipientDataMap).map(r => {
+    const pctPaid = r.totalFee > 0 ? (r.paidFee / r.totalFee) * 100 : (r.paidFee > 0 ? 100 : 0);
+    return { ...r, pctPaid };
   });
+
+  // Sort Decreasing by Percentage
+  recipientList.sort((a, b) => b.pctPaid - a.pctPaid);
+
+  // Take Top 5
+  recipientList = recipientList.slice(0, 5);
 
   const progressListEl = document.getElementById('recipientProgressList');
   progressListEl.innerHTML = '';
@@ -696,8 +714,6 @@ function renderOverview(){
       const outstanding = Math.max(0, r.totalFee - r.paidFee);
       const isSettled = outstanding === 0 && !isOverpaid;
       const hasOutstanding = outstanding > 1;
-      
-      const pctPaid = r.totalFee > 0 ? (r.paidFee / r.totalFee) * 100 : (r.paidFee > 0 ? 100 : 0);
 
       let statusBadge = '';
       if (isOverpaid) {
@@ -705,7 +721,7 @@ function renderOverview(){
       } else if (isSettled) {
         statusBadge = '<span class="badge lunas">LUNAS</span>';
       } else {
-        statusBadge = `<span class="badge outstanding">${pctPaid.toFixed(1)}% PAID</span>`;
+        statusBadge = `<span class="badge outstanding">${r.pctPaid.toFixed(1)}% PAID</span>`;
       }
 
       const balanceText = isOverpaid 
@@ -720,8 +736,8 @@ function renderOverview(){
           </div>
           
           <div class="progress-bar-container">
-            <div class="progress-bar-fill" style="width: ${Math.min(100, pctPaid)}%;"></div>
-            ${pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
+            <div class="progress-bar-fill" style="width: ${Math.min(100, r.pctPaid)}%;"></div>
+            ${r.pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
           </div>
 
           <div class="progress-card-caption">
@@ -790,17 +806,29 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
 
   const overallPaymentRatio = totalFeeEntitlement > 0 ? totalNetPaid / totalFeeEntitlement : 0;
 
-  const invList = Object.values(invMap).sort((a, b) => b.total_fee - a.total_fee);
-
-  invList.forEach(inv => {
+  let invList = Object.values(invMap).map(inv => {
     const paidForInv = inv.total_fee * overallPaymentRatio;
     const outstandingForInv = Math.max(0, inv.total_fee - paidForInv);
     const pctPaid = inv.total_fee > 0 ? (paidForInv / inv.total_fee) * 100 : 0;
-    
-    const isLunas = outstandingForInv < 1;
+    return {
+      ...inv,
+      paidForInv,
+      outstandingForInv,
+      pctPaid
+    };
+  });
+
+  // Sort Decreasing by Percentage
+  invList.sort((a, b) => b.pctPaid - a.pctPaid);
+
+  // Take Top 5
+  invList = invList.slice(0, 5);
+
+  invList.forEach(inv => {
+    const isLunas = inv.outstandingForInv < 1;
     let badgeHtml = isLunas 
       ? '<span class="badge lunas">LUNAS</span>' 
-      : `<span class="badge outstanding">${pctPaid.toFixed(1)}% PAID</span>`;
+      : `<span class="badge outstanding">${inv.pctPaid.toFixed(1)}% PAID</span>`;
 
     invProgressListEl.innerHTML += `
       <div class="progress-card-item ${!isLunas ? 'has-outstanding' : ''}">
@@ -810,14 +838,14 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
         </div>
 
         <div class="progress-bar-container">
-          <div class="progress-bar-fill" style="width: ${Math.min(100, pctPaid)}%;"></div>
-          ${pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
+          <div class="progress-bar-fill" style="width: ${Math.min(100, inv.pctPaid)}%;"></div>
+          ${inv.pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
         </div>
 
         <div class="progress-card-caption">
           <span>Fee Entitlement: <strong>${fmtIDR(inv.total_fee)}</strong></span>
-          <span>Paid (Net Est.): <strong style="color:var(--green);">${fmtIDR(paidForInv)}</strong></span>
-          <span>Outstanding: <strong style="color:${isLunas ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(outstandingForInv)}</strong></span>
+          <span>Paid (Net Est.): <strong style="color:var(--green);">${fmtIDR(inv.paidForInv)}</strong></span>
+          <span>Outstanding: <strong style="color:${isLunas ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(inv.outstandingForInv)}</strong></span>
         </div>
       </div>
     `;
