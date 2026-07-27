@@ -43,7 +43,7 @@
     z-index:10;
     border-bottom:1px solid var(--border);
     display:flex;
-    justify-content:space-between;
+    justify-space:space-between;
     align-items:center;
     transition: background 0.3s ease, border-color 0.3s ease;
   }
@@ -633,7 +633,7 @@ function renderOverview(){
   const withdrawal_balance = total_withdrawal - total_transfer;
   const outstanding_fee = Math.max(0, total_entitlement - total_paid_work_calc);
 
-  const pctTransfer = total_withdrawal > 0 ? Math.min(100, Math.max(0, (total_transfer / total_withdrawal) * 100)) : 0;
+  const pctTransfer = total_withdrawal > 0 ? (total_transfer / total_withdrawal) * 100 : 0;
 
   document.getElementById('ov-entitlement').textContent = fmtIDR(total_entitlement);
   document.getElementById('ov-paid').textContent = fmtIDR(total_paid_work_calc);
@@ -697,7 +697,7 @@ function renderOverview(){
       const isSettled = outstanding === 0 && !isOverpaid;
       const hasOutstanding = outstanding > 1;
       
-      const pctPaid = r.totalFee > 0 ? Math.min(100, (r.paidFee / r.totalFee) * 100) : (r.paidFee > 0 ? 100 : 0);
+      const pctPaid = r.totalFee > 0 ? (r.paidFee / r.totalFee) * 100 : (r.paidFee > 0 ? 100 : 0);
 
       let statusBadge = '';
       if (isOverpaid) {
@@ -705,7 +705,7 @@ function renderOverview(){
       } else if (isSettled) {
         statusBadge = '<span class="badge lunas">LUNAS</span>';
       } else {
-        statusBadge = `<span class="badge outstanding">${pctPaid.toFixed(0)}% PAID</span>`;
+        statusBadge = `<span class="badge outstanding">${pctPaid.toFixed(1)}% PAID</span>`;
       }
 
       const balanceText = isOverpaid 
@@ -720,7 +720,7 @@ function renderOverview(){
           </div>
           
           <div class="progress-bar-container">
-            <div class="progress-bar-fill" style="width: ${pctPaid}%;"></div>
+            <div class="progress-bar-fill" style="width: ${Math.min(100, pctPaid)}%;"></div>
             ${pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
           </div>
 
@@ -788,19 +788,19 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
     invMap[invNum].total_fee += amt;
   });
 
-  const overallPaymentRatio = totalFeeEntitlement > 0 ? Math.min(1, totalNetPaid / totalFeeEntitlement) : 0;
+  const overallPaymentRatio = totalFeeEntitlement > 0 ? totalNetPaid / totalFeeEntitlement : 0;
 
   const invList = Object.values(invMap).sort((a, b) => b.total_fee - a.total_fee);
 
   invList.forEach(inv => {
     const paidForInv = inv.total_fee * overallPaymentRatio;
     const outstandingForInv = Math.max(0, inv.total_fee - paidForInv);
-    const pctPaid = inv.total_fee > 0 ? Math.min(100, (paidForInv / inv.total_fee) * 100) : 0;
+    const pctPaid = inv.total_fee > 0 ? (paidForInv / inv.total_fee) * 100 : 0;
     
     const isLunas = outstandingForInv < 1;
     let badgeHtml = isLunas 
       ? '<span class="badge lunas">LUNAS</span>' 
-      : `<span class="badge outstanding">${pctPaid.toFixed(0)}% PAID</span>`;
+      : `<span class="badge outstanding">${pctPaid.toFixed(1)}% PAID</span>`;
 
     invProgressListEl.innerHTML += `
       <div class="progress-card-item ${!isLunas ? 'has-outstanding' : ''}">
@@ -810,7 +810,7 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
         </div>
 
         <div class="progress-bar-container">
-          <div class="progress-bar-fill" style="width: ${pctPaid}%;"></div>
+          <div class="progress-bar-fill" style="width: ${Math.min(100, pctPaid)}%;"></div>
           ${pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
         </div>
 
