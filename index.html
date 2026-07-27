@@ -332,6 +332,8 @@
     </div>
 
     <h2>Top Priority Fee per Invoice (Overpaid & Largest Outstanding)</h2>
+    <!-- Invoice Count Summary Metrics Banner -->
+    <div id="invoiceSummaryMetrics" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;"></div>
     <div class="scrollable-progress-wrap" id="invoiceProgressList"></div>
 
     <h2>Top Priority Fee per Recipient (Overpaid & Largest Outstanding)</h2>
@@ -667,7 +669,7 @@ function renderOverview(){
   // Render Invoice Progress Bars (Overpaid First, then Largest Outstanding)
   renderInvoiceProgressList(total_paid_work_calc, total_entitlement);
 
-  // Render Recipient Progress Cards (Overpaid First, then Largest Outstanding)
+  // Render Recipient Progress Cards
   const recipientDataMap = {};
   filteredFee.forEach(r => {
     const key = getRecipientName(r);
@@ -787,10 +789,12 @@ function renderOverview(){
 function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
   const detailRows = getInvoiceFeeDetailRows();
   const invProgressListEl = document.getElementById('invoiceProgressList');
+  const metricsEl = document.getElementById('invoiceSummaryMetrics');
   invProgressListEl.innerHTML = '';
 
   if (detailRows.length === 0) {
     invProgressListEl.innerHTML = '<div class="empty-state">Tidak ada data invoice fee</div>';
+    if (metricsEl) metricsEl.innerHTML = '';
     return;
   }
 
@@ -810,6 +814,13 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
 
   const overallPaymentRatio = totalFeeEntitlement > 0 ? totalNetPaid / totalFeeEntitlement : 0;
 
+  // Variables to track invoice counts across all categories
+  let totalInvoiceCount = 0;
+  let unpaidInvoiceCount = 0;   // Needs payment / has outstanding
+  let partialInvoiceCount = 0;  // Partially paid
+  let overpaidInvoiceCount = 0; // Flagged overpaid
+  let lunasInvoiceCount = 0;    // Fully settled
+
   let invList = Object.values(invMap).map(inv => {
     const paidForInv = inv.total_fee * overallPaymentRatio;
     const outstandingForInv = Math.max(0, inv.total_fee - paidForInv);
@@ -817,7 +828,20 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
     const overpaidAmt = isOverpaid ? (paidForInv - inv.total_fee) : 0;
     const pctPaid = inv.total_fee > 0 ? (paidForInv / inv.total_fee) * 100 : 0;
     const isLunas = outstandingForInv < 1 && !isOverpaid;
-    
+    const isPartial = paidForInv > 1 && outstandingForInv >= 1 && !isOverpaid;
+
+    totalInvoiceCount++;
+    if (isOverpaid) {
+      overpaidInvoiceCount++;
+    } else if (isLunas) {
+      lunasInvoiceCount++;
+    } else {
+      unpaidInvoiceCount++;
+      if (isPartial) {
+        partialInvoiceCount++;
+      }
+    }
+
     return {
       ...inv,
       paidForInv,
@@ -825,9 +849,21 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
       isOverpaid,
       overpaidAmt,
       pctPaid,
-      isLunas
+      isLunas,
+      isPartial
     };
   });
+
+  // Display summary metrics banner above progress list
+  if (metricsEl) {
+    metricsEl.innerHTML = `
+      <span class="badge" style="background:var(--card2); border:1px solid var(--border); color:var(--txt);">Total: ${totalInvoiceCount} Invoices</span>
+      <span class="badge open">Needs Payment: ${unpaidInvoiceCount}</span>
+      <span class="badge partial">Partial Paid: ${partialInvoiceCount}</span>
+      <span class="badge overpaid">Overpaid: ${overpaidInvoiceCount}</span>
+      <span class="badge lunas">LUNAS: ${lunasInvoiceCount}</span>
+    `;
+  }
 
   // PRIORITY SORT: Overpaid first, then Largest Outstanding to Smallest
   invList.sort((a, b) => {
@@ -851,6 +887,8 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
       badgeHtml = '<span class="badge overpaid">⚠️ OVERPAID</span>';
     } else if (inv.isLunas) {
       badgeHtml = '<span class="badge lunas">LUNAS</span>';
+    } else if (inv.isPartial) {
+      badgeHtml = `<span class="badge partial">PARTIAL (${inv.pctPaid.toFixed(1)}%)</span>`;
     } else {
       badgeHtml = `<span class="badge outstanding">${inv.pctPaid.toFixed(1)}% PAID</span>`;
     }
