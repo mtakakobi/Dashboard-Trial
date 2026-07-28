@@ -47,7 +47,7 @@
   }
   
   header {
-    padding: 14px 24px;
+    padding: 12px 24px;
     position: sticky;
     top: 0;
     background: var(--card);
@@ -66,7 +66,7 @@
     background: var(--card2);
     border: 1px solid var(--border);
     color: var(--txt);
-    padding: 6px 14px;
+    padding: 5px 12px;
     border-radius: 20px;
     font-size: 12px;
     cursor: pointer;
@@ -82,19 +82,19 @@
   .tabs {
     display: flex;
     gap: 8px;
-    padding: 10px 24px;
+    padding: 8px 24px;
     overflow-x: auto;
     background: var(--bg);
     position: sticky;
-    top: 61px;
+    top: 57px;
     z-index: 9;
     border-bottom: 1px solid var(--border);
   }
   .tab {
     flex: 0 0 auto;
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 13px;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 12.5px;
     font-weight: 500;
     background: var(--card);
     color: var(--muted);
@@ -107,7 +107,7 @@
   .tab.active { background: var(--accent); color: #ffffff; border-color: var(--accent); font-weight: 600; }
   
   main {
-    padding: 20px 24px 40px;
+    padding: 16px 24px 32px;
     width: 100%;
     max-width: 1140px;
     margin: 0 auto;
@@ -116,7 +116,108 @@
   }
   .section { display: none; }
   .section.active { display: block; }
+
+  /* Compact Filter Bar Styling */
+  .filters {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    margin-bottom: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+  .filters .frow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 0;
+  }
+  .filters label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    white-space: nowrap;
+  }
   
+  .chips-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+  }
+  
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s ease;
+    color: var(--muted);
+  }
+  .chip input { display: none; } /* Hide raw checkbox */
+  .chip.checked {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(56, 139, 253, 0.12);
+    font-weight: 600;
+  }
+  
+  .filters-inline-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+    white-space: nowrap;
+  }
+  .filters-inline-actions button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 2px 4px;
+    opacity: 0.85;
+    transition: opacity 0.15s ease;
+  }
+  .filters-inline-actions button:hover { opacity: 1; text-decoration: underline; }
+
+  .filters select {
+    background: var(--card2);
+    color: var(--txt);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    outline: none;
+  }
+  .filters select:focus { border-color: var(--accent); }
+  .filters .freset {
+    font-size: 11.5px;
+    color: var(--accent);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
   .overview-top-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -157,15 +258,15 @@
   .card .value.amber { color: var(--amber); }
   .card.full { grid-column: 1 / -1; }
   
-  .section h2 { font-size: 16px; font-weight: 700; margin: 24px 0 12px; color: var(--txt); }
+  .section h2 { font-size: 15px; font-weight: 700; margin: 20px 0 10px; color: var(--txt); }
 
   .scrollable-progress-wrap {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 16px;
+    padding: 14px;
     margin-bottom: 16px;
-    max-height: 400px;
+    max-height: 380px;
     overflow-y: auto;
   }
   .scrollable-progress-wrap::-webkit-scrollbar { width: 6px; }
@@ -174,20 +275,20 @@
   .row-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-bottom: 10px;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
     transition: transform 0.15s ease, border-color 0.15s ease;
   }
   .row-card:hover { border-color: var(--accent); }
-  .row-card .top { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-  .row-card .mid { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .row-card .top { display: flex; justify-content: space-between; font-size: 13.5px; font-weight: 600; margin-bottom: 4px; }
+  .row-card .mid { font-size: 11.5px; color: var(--muted); margin-bottom: 4px; }
   
   .badge {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 2px 8px;
     border-radius: 12px;
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 600;
     cursor: pointer;
     user-select: none;
@@ -200,27 +301,11 @@
   .badge.overpaid { background: rgba(210, 153, 34, 0.25); color: var(--amber); border: 1px solid var(--amber); }
   
   .amount { font-weight: 700; }
-  footer { text-align: center; color: var(--muted); font-size: 11.5px; padding: 24px 0 12px; }
-  
-  .filters { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
-  .filters .frow { margin-bottom: 10px; }
-  .filters .frow:last-child { margin-bottom: 0; }
-  .filters label { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
-  .filters select { width: 100%; background: var(--card2); color: var(--txt); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 13px; outline: none; }
-  .filters select:focus { border-color: var(--accent); }
-  .filters .freset { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--accent); background: none; border: none; padding: 0; cursor: pointer; font-weight: 600; }
-  .empty-state { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 0; }
-  .proof-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 6px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 6px; color: var(--accent); font-size: 12px; text-decoration: none; font-weight: 600; transition: border-color 0.2s ease; }
+  footer { text-align: center; color: var(--muted); font-size: 11.5px; padding: 20px 0 12px; }
+
+  .empty-state { text-align: center; color: var(--muted); font-size: 12.5px; padding: 16px 0; }
+  .proof-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 4px 10px; background: var(--card2); border: 1px solid var(--border); border-radius: 6px; color: var(--accent); font-size: 11.5px; text-decoration: none; font-weight: 600; transition: border-color 0.2s ease; }
   .proof-link:hover { border-color: var(--accent); }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { display: flex; align-items: center; gap: 6px; background: var(--card2); border: 1px solid var(--border); border-radius: 16px; padding: 5px 12px; font-size: 12px; cursor: pointer; user-select: none; transition: all 0.2s ease; }
-  .chip input { accent-color: var(--accent); }
-  .chip.checked { border-color: var(--accent); color: var(--accent); background: rgba(56, 139, 253, 0.1); }
-
-  .filters-inline { display: flex; gap: 8px; margin-top: 8px; }
-  .filters-inline button { flex: 1; background: var(--card2); border: 1px solid var(--border); color: var(--muted); font-size: 12px; padding: 6px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s ease; }
-  .filters-inline button:hover { color: var(--txt); border-color: var(--accent); }
 
   #loading-banner {
     position: fixed;
@@ -228,7 +313,7 @@
     right: 20px;
     background: var(--card2);
     border: 1px solid var(--border);
-    padding: 10px 16px;
+    padding: 8px 14px;
     border-radius: 30px;
     font-size: 12px;
     font-weight: 600;
@@ -253,29 +338,29 @@
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
   .progress-card-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
-  .progress-bar-container { width: 100%; height: 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; display: flex; }
+  .progress-bar-container { width: 100%; height: 10px; background: var(--card2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative; display: flex; }
   .progress-bar-fill { height: 100%; background: var(--green-light); transition: width 0.4s ease; }
   .progress-bar-remaining { height: 100%; background: var(--accent); flex: 1; opacity: 0.5; }
-  .progress-legend { display: flex; justify-content: space-between; margin-top: 10px; font-size: 11.5px; }
+  .progress-legend { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; }
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
   .legend-dot.green { background: var(--green-light); }
   .legend-dot.blue { background: var(--accent); }
 
-  .progress-card-item { background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; transition: background 0.2s ease, border-color 0.2s ease; }
-  .progress-card-item.has-overpaid { border-left: 4px solid var(--amber); }
-  .progress-card-item.has-outstanding { border-left: 4px solid var(--red); }
+  .progress-card-item { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; transition: background 0.2s ease, border-color 0.2s ease; }
+  .progress-card-item.has-overpaid { border-left: 3px solid var(--amber); }
+  .progress-card-item.has-outstanding { border-left: 3px solid var(--red); }
   .progress-card-item:last-child { margin-bottom: 0; }
-  .progress-card-header-inner { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 13.5px; margin-bottom: 8px; }
-  .progress-card-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .progress-card-header-inner { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 12.5px; margin-bottom: 6px; }
+  .progress-card-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11.5px; color: var(--muted); }
   .progress-card-caption span strong { color: var(--txt); }
 
-  .fee-summary-banner { display: flex; justify-content: space-between; align-items: center; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-top: 8px; margin-bottom: 12px; }
+  .fee-summary-banner { display: flex; justify-content: space-between; align-items: center; background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-top: 6px; margin-bottom: 10px; }
 
-  .data-table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-top: 8px; margin-bottom: 20px; }
-  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
-  .data-table th { background: var(--card2); color: var(--muted); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
-  .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--txt); white-space: nowrap; }
+  .data-table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--border); border-radius: 8px; margin-top: 6px; margin-bottom: 16px; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 11.5px; text-align: left; }
+  .data-table th { background: var(--card2); color: var(--muted); font-weight: 600; padding: 8px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .data-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--txt); white-space: nowrap; }
   .data-table tr:last-child td { border-bottom: none; }
   .data-table tr:hover td { background: var(--card2); }
 </style>
@@ -307,13 +392,16 @@
 </div>
 
 <main id="mainContainer">
+  <!-- OVERVIEW SECTION -->
   <section class="section active" id="overview">
     <div class="filters">
-      <div class="frow">
-        <label>Filter Tanggal Withdrawal</label>
-        <div class="chips" id="ovWdChips"></div>
-        <div class="filters-inline">
-          <button id="ovSelectAll">Pilih Semua</button>
+      <div class="chips-wrapper">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label>Tanggal Withdrawal:</label>
+          <div class="chips" id="ovWdChips"></div>
+        </div>
+        <div class="filters-inline-actions">
+          <button id="ovSelectAll">Semua</button>
           <button id="ovSelectNone">Kosongkan</button>
         </div>
       </div>
@@ -365,37 +453,68 @@
     </div>
 
     <h2>Priority Fee per Invoice</h2>
-    <div id="invoiceSummaryMetrics" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;"></div>
+    <div id="invoiceSummaryMetrics" style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;"></div>
     <div class="scrollable-progress-wrap" id="invoiceProgressList"></div>
 
     <h2>Priority Fee per Recipient</h2>
-    <div id="recipientSummaryMetrics" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;"></div>
+    <div id="recipientSummaryMetrics" style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;"></div>
     <div class="scrollable-progress-wrap" id="recipientProgressList"></div>
   </section>
 
+  <!-- FEE SECTION -->
   <section class="section" id="fee">
     <div class="filters">
-      <div class="frow"><label>Tanggal Withdrawal</label><select id="feeFilterTglWd"><option value="">Semua Tanggal</option></select></div>
-      <div class="frow"><label>Penerima</label><select id="feeFilterRecipient"><option value="">Semua Penerima</option></select></div>
-      <button class="freset" id="feeReset">Reset Filter</button>
+      <div class="chips-wrapper">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label>Tanggal Withdrawal:</label>
+          <div class="chips" id="feeWdChips"></div>
+        </div>
+        <div class="filters-inline-actions">
+          <button id="feeSelectAll">Semua</button>
+          <button id="feeSelectNone">Kosongkan</button>
+        </div>
+      </div>
+      <div class="frow" style="margin-top:6px;">
+        <label>Penerima:</label>
+        <select id="feeFilterRecipient" style="flex:1;"><option value="">Semua Penerima</option></select>
+        <button class="freset" id="feeReset" style="margin-left:8px;">Reset Filter</button>
+      </div>
     </div>
     <h2>Fee per Recipient</h2>
     <div id="feeList"></div>
   </section>
 
+  <!-- PAYMENT SECTION -->
   <section class="section" id="payment">
     <div class="filters">
-      <div class="frow"><label>Periode Tanggal Withdrawal</label><select id="payFilterTglWd"><option value="">Semua Tanggal</option></select></div>
-      <button class="freset" id="payReset">Reset Filter</button>
+      <div class="chips-wrapper">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label>Tanggal Withdrawal:</label>
+          <div class="chips" id="payWdChips"></div>
+        </div>
+        <div class="filters-inline-actions">
+          <button id="paySelectAll">Semua</button>
+          <button id="paySelectNone">Kosongkan</button>
+        </div>
+      </div>
     </div>
     <h2>Payment Batch (04_WORK_PAYMENT_CALC)</h2>
     <div id="paymentList"></div>
   </section>
 
+  <!-- WITHDRAWAL SECTION -->
   <section class="section" id="withdrawal">
     <div class="filters">
-      <div class="frow"><label>Tanggal Withdrawal</label><select id="filterTglWithdrawal"><option value="">Semua Tanggal</option></select></div>
-      <button class="freset" id="resetFilters">Reset Filter</button>
+      <div class="chips-wrapper">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label>Tanggal Withdrawal:</label>
+          <div class="chips" id="wdWdChips"></div>
+        </div>
+        <div class="filters-inline-actions">
+          <button id="wdSelectAll">Semua</button>
+          <button id="wdSelectNone">Kosongkan</button>
+        </div>
+      </div>
     </div>
     <h2>Withdrawal</h2>
     <div id="withdrawalList"></div>
@@ -403,19 +522,32 @@
     <div id="transferList"></div>
   </section>
 
+  <!-- INVOICE SECTION -->
   <section class="section" id="invoice">
-    <div class="filters">
-      <div class="frow"><label>Tanggal Pembayaran Invoice</label><select id="invFilterTglBayar"><option value="">Semua Tanggal</option></select></div>
+    <div class="filters" style="justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:8px; flex:1;">
+        <label>Tanggal Pembayaran:</label>
+        <select id="invFilterTglBayar" style="flex:1; max-width:260px;"><option value="">Semua Tanggal</option></select>
+      </div>
       <button class="freset" id="invReset">Reset Filter</button>
     </div>
     <h2>Sales Invoice</h2>
     <div id="invoiceList"></div>
   </section>
 
+  <!-- PROOF SECTION -->
   <section class="section" id="proof">
     <div class="filters">
-      <div class="frow"><label>Tanggal Withdrawal</label><select id="proofFilterTglWd"><option value="">Semua Tanggal</option></select></div>
-      <button class="freset" id="proofReset">Reset Filter</button>
+      <div class="chips-wrapper">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label>Tanggal Withdrawal:</label>
+          <div class="chips" id="proofWdChips"></div>
+        </div>
+        <div class="filters-inline-actions">
+          <button id="proofSelectAll">Semua</button>
+          <button id="proofSelectNone">Kosongkan</button>
+        </div>
+      </div>
     </div>
     <h2>Bukti Transfer (Google Drive)</h2>
     <div id="proofList"></div>
@@ -436,7 +568,7 @@ let allWdDates = [];
 let activeInvoiceStatusFilter = 'ALL';
 let activeRecipientStatusFilter = 'ALL';
 
-let feeFilterTglWd, feeFilterRecipient, payFilterTglWd, selTglWithdrawal, invFilterTglBayar, proofFilterTglWd;
+let feeFilterRecipient, invFilterTglBayar;
 
 const themeToggleBtn = document.getElementById('themeToggle');
 const themeIcon = document.getElementById('themeIcon');
@@ -466,7 +598,6 @@ function updateChartColors() {
   }
 }
 
-// Promisified JSONP Loader to bypass CORS restrictions safely
 function fetchJSONP(url) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
@@ -493,7 +624,6 @@ function fetchJSONP(url) {
 }
 
 async function initDashboard() {
-  // 1. Instant load from local storage cache if available
   const cached = localStorage.getItem(CACHE_KEY);
   if (cached) {
     try {
@@ -505,7 +635,6 @@ async function initDashboard() {
     }
   }
 
-  // 2. Fetch fresh data via JSONP in background
   try {
     const data = await fetchJSONP(API_URL);
     DATA = data;
@@ -635,75 +764,82 @@ document.querySelectorAll('.tab').forEach(t=>{
   });
 });
 
-function setupFiltersAndChips() {
-  allWdDates = DATA.withdrawals ? [...new Set(DATA.withdrawals.map(w=>w.withdrawal_date).filter(Boolean))].sort() : [];
-  const ovWdChipsEl = document.getElementById('ovWdChips');
-  ovWdChipsEl.innerHTML = '';
-  allWdDates.forEach(d=>{
-    ovWdChipsEl.innerHTML += `<label class="chip checked" data-date="${d}"><input type="checkbox" value="${d}" checked> ${d}</label>`;
+function createChipFilters(containerId, onRenderCallback) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  allWdDates.forEach(d => {
+    container.innerHTML += `<label class="chip checked" data-date="${d}"><input type="checkbox" value="${d}" checked> ${d}</label>`;
   });
-  
-  ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{
-    cb.addEventListener('change', ()=>{
+
+  container.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
       cb.closest('.chip').classList.toggle('checked', cb.checked);
-      renderOverview();
+      onRenderCallback();
     });
   });
+}
 
-  document.getElementById('ovSelectAll').onclick = () => {
-    ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = true; cb.closest('.chip').classList.add('checked'); });
-    renderOverview();
-  };
-  document.getElementById('ovSelectNone').onclick = () => {
-    ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = false; cb.closest('.chip').classList.remove('checked'); });
-    renderOverview();
+function getSelectedDatesFromContainer(containerId) {
+  const checked = document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`);
+  return new Set([...checked].map(c => c.value));
+}
+
+function setupFiltersAndChips() {
+  allWdDates = DATA.withdrawals ? [...new Set(DATA.withdrawals.map(w=>w.withdrawal_date).filter(Boolean))].sort() : [];
+  
+  createChipFilters('ovWdChips', renderOverview);
+  createChipFilters('feeWdChips', renderFee);
+  createChipFilters('payWdChips', renderPayment);
+  createChipFilters('wdWdChips', renderWithdrawalTab);
+  createChipFilters('proofWdChips', renderProof);
+
+  const setupBatchBtn = (allId, noneId, containerId, renderFn) => {
+    const allBtn = document.getElementById(allId);
+    const noneBtn = document.getElementById(noneId);
+    if (allBtn) {
+      allBtn.onclick = () => {
+        document.querySelectorAll(`#${containerId} input[type=checkbox]`).forEach(cb => { cb.checked = true; cb.closest('.chip').classList.add('checked'); });
+        renderFn();
+      };
+    }
+    if (noneBtn) {
+      noneBtn.onclick = () => {
+        document.querySelectorAll(`#${containerId} input[type=checkbox]`).forEach(cb => { cb.checked = false; cb.closest('.chip').classList.remove('checked'); });
+        renderFn();
+      };
+    }
   };
 
-  feeFilterTglWd = document.getElementById('feeFilterTglWd');
+  setupBatchBtn('ovSelectAll', 'ovSelectNone', 'ovWdChips', renderOverview);
+  setupBatchBtn('feeSelectAll', 'feeSelectNone', 'feeWdChips', renderFee);
+  setupBatchBtn('paySelectAll', 'paySelectNone', 'payWdChips', renderPayment);
+  setupBatchBtn('wdSelectAll', 'wdSelectNone', 'wdWdChips', renderWithdrawalTab);
+  setupBatchBtn('proofSelectAll', 'proofSelectNone', 'proofWdChips', renderProof);
+
   feeFilterRecipient = document.getElementById('feeFilterRecipient');
-  payFilterTglWd = document.getElementById('payFilterTglWd');
-  selTglWithdrawal = document.getElementById('filterTglWithdrawal');
   invFilterTglBayar = document.getElementById('invFilterTglBayar');
-  proofFilterTglWd = document.getElementById('proofFilterTglWd');
 
-  feeFilterTglWd.innerHTML = '<option value="">Semua Tanggal</option>';
-  payFilterTglWd.innerHTML = '<option value="">Semua Tanggal</option>';
-  selTglWithdrawal.innerHTML = '<option value="">Semua Tanggal</option>';
-  proofFilterTglWd.innerHTML = '<option value="">Semua Tanggal</option>';
   feeFilterRecipient.innerHTML = '<option value="">Semua Penerima</option>';
   invFilterTglBayar.innerHTML = '<option value="">Semua Tanggal</option>';
 
-  allWdDates.forEach(d=> {
-    feeFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
-    payFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
-    selTglWithdrawal.innerHTML += `<option value="${d}">${d}</option>`;
-    proofFilterTglWd.innerHTML += `<option value="${d}">${d}</option>`;
-  });
-
   const activeRecipients = DATA.fee_by_recipient ? [...new Set(DATA.fee_by_recipient.map(r=>norm(r.name)).filter(Boolean))].sort() : [];
   activeRecipients.forEach(rawName => {
-    const displayName = rawName.toUpperCase();
-    feeFilterRecipient.innerHTML += `<option value="${rawName}">${displayName}</option>`;
+    feeFilterRecipient.innerHTML += `<option value="${rawName}">${rawName.toUpperCase()}</option>`;
   });
 
   const invDates = DATA.invoices ? [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN'] || i['tanggal_pembayaran']).filter(Boolean))].sort() : [];
-  invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
+  invDates.forEach(d => invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
 
-  [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.onchange = renderFee);
-  payFilterTglWd.onchange = renderPayment;
-  selTglWithdrawal.onchange = renderWithdrawalTab;
+  feeFilterRecipient.onchange = renderFee;
   invFilterTglBayar.onchange = renderInvoice;
-  proofFilterTglWd.onchange = renderProof;
 
-  document.getElementById('feeReset').onclick = ()=>{ feeFilterTglWd.value=''; feeFilterRecipient.value=''; renderFee(); };
-  document.getElementById('payReset').onclick = ()=>{ payFilterTglWd.value=''; renderPayment(); };
-  document.getElementById('resetFilters').onclick = ()=>{ selTglWithdrawal.value=''; renderWithdrawalTab(); };
-  document.getElementById('invReset').onclick = ()=>{ invFilterTglBayar.value=''; renderInvoice(); };
-  document.getElementById('proofReset').onclick = ()=>{ proofFilterTglWd.value=''; renderProof(); };
-}
-
-function getOvSelectedDates(){
-  return new Set([...document.querySelectorAll('#ovWdChips input[type=checkbox]:checked')].map(c=>c.value));
+  document.getElementById('feeReset').onclick = () => { 
+    document.querySelectorAll('#feeWdChips input[type=checkbox]').forEach(cb => { cb.checked = true; cb.closest('.chip').classList.add('checked'); });
+    feeFilterRecipient.value = ''; 
+    renderFee(); 
+  };
+  document.getElementById('invReset').onclick = () => { invFilterTglBayar.value = ''; renderInvoice(); };
 }
 
 function recipientNamesForWdDates(dateSet){
@@ -722,7 +858,7 @@ function batchIdsForWdDates(dateSet){
 }
 
 function renderOverview(){
-  const selectedDates = getOvSelectedDates();
+  const selectedDates = getSelectedDatesFromContainer('ovWdChips');
   const isFiltered = selectedDates.size !== allWdDates.length;
   const names = isFiltered ? recipientNamesForWdDates(selectedDates) : null;
   const batchIds = isFiltered ? batchIdsForWdDates(selectedDates) : null;
@@ -1036,9 +1172,10 @@ function setRecipientFilter(status) {
 }
 
 function renderFee(){
-  const tglWd = feeFilterTglWd.value;
+  const selectedDates = getSelectedDatesFromContainer('feeWdChips');
+  const isFiltered = selectedDates.size !== allWdDates.length;
   const recipient = feeFilterRecipient.value;
-  const names = tglWd ? recipientNamesForWdDates(new Set([tglWd])) : null;
+  const names = isFiltered ? recipientNamesForWdDates(selectedDates) : null;
   let filtered = names ? (DATA.fee_by_recipient||[]).filter(r=>names.has(getRecipientName(r))) : (DATA.fee_by_recipient||[]);
   
   if(recipient) filtered = filtered.filter(r=>matchRecipient(r, recipient));
@@ -1047,10 +1184,10 @@ function renderFee(){
   
   filtered.forEach(r=>{
     feeListEl.innerHTML += `
-      <div class="row-card" style="border-left: 4px solid var(--accent);">
+      <div class="row-card" style="border-left: 3px solid var(--accent);">
         <div class="top">
-          <span style="font-size:14px; font-weight:700;">${(r.name || r.recipient_name || '').toUpperCase()}</span>
-          <span class="amount" style="font-size:15px; color:var(--accent);">${fmtIDR(r.amount)}</span>
+          <span style="font-size:13.5px; font-weight:700;">${(r.name || r.recipient_name || '').toUpperCase()}</span>
+          <span class="amount" style="font-size:14px; color:var(--accent);">${fmtIDR(r.amount)}</span>
         </div>
       </div>
     `;
@@ -1060,9 +1197,9 @@ function renderFee(){
       
       const recipientItems = rawDetailRows.filter(item => {
         if (!matchRecipient(item, recipient)) return false;
-        if (tglWd) {
+        if (isFiltered) {
           const itemWdDate = item.withdrawal_date || item['TANGGAL WITHDRAWAL'] || item['tanggal_withdrawal'] || wdIdToDate[item.withdrawal_id];
-          if (itemWdDate && itemWdDate !== tglWd) return false;
+          if (itemWdDate && !selectedDates.has(itemWdDate)) return false;
         }
         return true;
       });
@@ -1076,10 +1213,10 @@ function renderFee(){
         feeListEl.innerHTML += `
           <div class="fee-summary-banner">
             <div>
-              <div style="font-size:11px; color:var(--muted); font-weight:600;">TOTAL BREAKDOWN AMOUNT</div>
-              <div style="font-size:18px; font-weight:800; color:var(--green-light); margin-top:2px;">${fmtIDR(totalSum)}</div>
+              <div style="font-size:10.5px; color:var(--muted); font-weight:600;">TOTAL BREAKDOWN AMOUNT</div>
+              <div style="font-size:16px; font-weight:800; color:var(--green-light); margin-top:2px;">${fmtIDR(totalSum)}</div>
             </div>
-            <span class="badge lunas" style="font-size:11px;">${recipientItems.length} Item Rows</span>
+            <span class="badge lunas" style="font-size:10.5px;">${recipientItems.length} Item Rows</span>
           </div>
 
           <div class="data-table-wrap">
@@ -1108,9 +1245,9 @@ function renderFee(){
 
                   return `
                     <tr>
-                      <td style="color:var(--muted); font-size:11px;">${idx + 1}</td>
+                      <td style="color:var(--muted); font-size:10.5px;">${idx + 1}</td>
                       <td>📅 ${payDate}</td>
-                      <td><span class="badge open" style="font-size:10px;">${feeId}</span></td>
+                      <td><span class="badge open" style="font-size:9.5px;">${feeId}</span></td>
                       <td style="font-weight:600;">${invNum}</td>
                       <td style="text-align:right; font-weight:700;" class="amount">${fmtIDR(feeAmt)}</td>
                     </tr>
@@ -1128,8 +1265,9 @@ function renderFee(){
 }
 
 function renderPayment(){
-  const tglWd = payFilterTglWd.value;
-  const batchIds = tglWd ? batchIdsForWdDates(new Set([tglWd])) : null;
+  const selectedDates = getSelectedDatesFromContainer('payWdChips');
+  const isFiltered = selectedDates.size !== allWdDates.length;
+  const batchIds = isFiltered ? batchIdsForWdDates(selectedDates) : null;
   const filtered = batchIds ? (DATA.payments||[]).filter(p=>batchIds.has(p.payment_batch_id)) : (DATA.payments||[]);
   const paymentListEl = document.getElementById('paymentList');
   paymentListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data untuk filter ini</div>';
@@ -1144,10 +1282,11 @@ function renderPayment(){
 }
 
 function renderWithdrawalTab(){
-  const tglWd = selTglWithdrawal.value;
+  const selectedDates = getSelectedDatesFromContainer('wdWdChips');
+  const isFiltered = selectedDates.size !== allWdDates.length;
 
   const filteredWd = (DATA.withdrawals||[]).filter(w => {
-    if (tglWd && w.withdrawal_date !== tglWd) return false;
+    if (isFiltered && !selectedDates.has(w.withdrawal_date)) return false;
     return true;
   });
 
@@ -1164,7 +1303,7 @@ function renderWithdrawalTab(){
 
   const filteredTr = (DATA.transfers||[]).filter(t => {
     const wDate = wdIdToDate[t.withdrawal_id];
-    if (tglWd && wDate !== tglWd) return false;
+    if (isFiltered && !selectedDates.has(wDate)) return false;
     return true;
   });
 
@@ -1202,8 +1341,13 @@ function renderInvoice(){
 }
 
 function renderProof(){
-  const tgl = proofFilterTglWd.value;
-  const filtered = tgl ? (DATA.transfers||[]).filter(t=>wdIdToDate[t.withdrawal_id]===tgl) : (DATA.transfers||[]);
+  const selectedDates = getSelectedDatesFromContainer('proofWdChips');
+  const isFiltered = selectedDates.size !== allWdDates.length;
+
+  const filtered = isFiltered 
+    ? (DATA.transfers||[]).filter(t=>selectedDates.has(wdIdToDate[t.withdrawal_id])) 
+    : (DATA.transfers||[]);
+
   const proofListEl = document.getElementById('proofList');
   proofListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
   filtered.forEach(t=>{
