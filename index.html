@@ -7,61 +7,66 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
-    --bg: #0f1115;
-    --card: #181b22;
-    --card2: #1f2330;
-    --border: #2a2f3d;
-    --txt: #e8eaef;
-    --muted: #8b92a5;
-    --accent: #5b8def;
-    --green: #3ddc97;
-    --red: #ff6b6b;
-    --amber: #ffb84d;
+    --bg: #0d1117;
+    --card: #161b22;
+    --card2: #21262d;
+    --border: #30363d;
+    --txt: #f0f6fc;
+    --muted: #8b949e;
+    --accent: #388bfd;
+    --green: #238636;
+    --green-light: #2ea043;
+    --red: #da3633;
+    --amber: #d29922;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   }
 
   [data-theme="light"] {
-    --bg: #f4f6f9;
+    --bg: #f6f8fa;
     --card: #ffffff;
-    --card2: #f0f2f5;
-    --border: #dcdfe6;
-    --txt: #1f2329;
-    --muted: #606266;
-    --accent: #3b82f6;
-    --green: #10b981;
-    --red: #ef4444;
-    --amber: #f59e0b;
+    --card2: #f3f4f6;
+    --border: #d0d7de;
+    --txt: #1f2328;
+    --muted: #656d76;
+    --accent: #0969da;
+    --green: #1a7f37;
+    --green-light: #2da44e;
+    --red: #cf222e;
+    --amber: #bf8700;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;transition: background 0.3s ease, color 0.3s ease;}
-  
-  header{
-    padding: clamp(10px, 2vh, 16px) clamp(12px, 3vw, 24px);
-    position:sticky;
-    top:0;
-    background:var(--bg);
-    z-index:10;
-    border-bottom:1px solid var(--border);
-    display:flex;
-    justify-space:space-between;
-    align-items:center;
-    transition: background 0.3s ease, border-color 0.3s ease;
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--txt);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    transition: background 0.25s ease, color 0.25s ease;
+    -webkit-font-smoothing: antialiased;
   }
   
-  .header-left {
+  header {
+    padding: 14px 24px;
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: clamp(8px, 1.5vw, 16px);
+    box-shadow: var(--shadow);
   }
-
-  header h1{font-size: clamp(14px, 2.5vw, 18px); margin:0 0 2px; font-weight:700;}
-  header p{margin:0; font-size: clamp(10.5px, 1.5vw, 12.5px); color:var(--muted);}
+  
+  .header-left h1 { font-size: 18px; margin: 0 0 2px; font-weight: 700; letter-spacing: -0.2px; }
+  .header-left p { margin: 0; font-size: 12px; color: var(--muted); }
   
   .theme-toggle-btn {
     background: var(--card2);
     border: 1px solid var(--border);
     color: var(--txt);
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 20px;
     font-size: 12px;
     cursor: pointer;
@@ -72,39 +77,51 @@
     white-space: nowrap;
     transition: all 0.2s ease;
   }
-  .theme-toggle-btn:hover { border-color: var(--accent); }
+  .theme-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-  .tabs{
-    display:flex;
-    gap:6px;
-    padding: 10px clamp(12px, 3vw, 24px);
-    overflow-x:auto;
-    background:var(--bg);
-    position:sticky;
-    top: 58px;
-    z-index:9;
-    border-bottom:1px solid var(--border);
-    transition: background 0.3s ease, border-color 0.3s ease;
+  .tabs {
+    display: flex;
+    gap: 8px;
+    padding: 10px 24px;
+    overflow-x: auto;
+    background: var(--bg);
+    position: sticky;
+    top: 61px;
+    z-index: 9;
+    border-bottom: 1px solid var(--border);
   }
-  .tab{flex:0 0 auto; padding:7px 14px; border-radius:20px; font-size: clamp(11.5px, 1.5vw, 13px); background:var(--card); color:var(--muted); border:1px solid var(--border); white-space:nowrap; cursor:pointer;}
-  .tab.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .tab {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--card);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .tab:hover { color: var(--txt); }
+  .tab.active { background: var(--accent); color: #ffffff; border-color: var(--accent); font-weight: 600; }
   
-  main{
-    padding: 14px clamp(12px, 3vw, 24px) 40px;
+  main {
+    padding: 20px 24px 40px;
     width: 100%;
-    max-width: clamp(320px, 92vw, 1100px);
+    max-width: 1140px;
     margin: 0 auto;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
+    opacity: 1;
+    transition: opacity 0.25s ease-in-out;
   }
-  .section{display:none;}
-  .section.active{display:block;}
+  .section { display: none; }
+  .section.active { display: block; }
   
   .overview-top-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(clamp(280px, 45%, 480px), 1fr));
-    gap: clamp(10px, 1.5vw, 16px);
-    margin-bottom: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
   }
 
   .overview-chart-card {
@@ -112,154 +129,168 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 14px;
-    min-height: 220px;
+    padding: 16px;
+    min-height: 230px;
   }
-  .overview-chart-card h3 {
-    margin: 0 0 10px 0;
-    font-size: clamp(12px, 1.5vw, 14px);
-    color: var(--txt);
-    align-self: flex-start;
-  }
+  .overview-chart-card h3 { margin: 0 0 12px 0; font-size: 14px; font-weight: 600; color: var(--txt); align-self: flex-start; }
 
   .overview-metrics-col {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: clamp(8px, 1vw, 12px);
+    gap: 12px;
   }
 
-  @media (max-width: 480px) {
-    .overview-metrics-col {
-      grid-template-columns: 1fr;
-    }
-  }
+  @media (max-width: 520px) { .overview-metrics-col { grid-template-columns: 1fr; } }
 
-  .card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding: clamp(10px, 1.5vw, 16px); transition: background 0.3s ease, border-color 0.3s ease;}
-  .card .label{font-size: clamp(10.5px, 1.2vw, 12px); color:var(--muted); margin-bottom:4px;}
-  .card .value{font-size: clamp(14px, 2vw, 18px); font-weight:700;}
-  .card .value.green{color:var(--green);}
-  .card .value.red{color:var(--red);}
-  .card .value.amber{color:var(--amber);}
-  .card.full{grid-column: 1 / -1;}
-  
-  .section h2{font-size: clamp(13px, 1.8vw, 16px); margin:18px 0 10px; color:var(--txt);}
-  .chart-wrap{background:var(--card); border:1px solid var(--border); border-radius:14px; padding: clamp(10px, 1.5vw, 16px); margin-bottom:16px; transition: background 0.3s ease, border-color 0.3s ease;}
-  
-  /* Scrollable Progress Container fixed to ~5 visible items height */
-  .scrollable-progress-wrap {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: clamp(10px, 1.5vw, 16px);
-    margin-bottom: 16px;
-    max-height: 390px;
-    overflow-y: auto;
-  }
-  .scrollable-progress-wrap::-webkit-scrollbar {
-    width: 6px;
-  }
-  .scrollable-progress-wrap::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 4px;
-  }
-
-  .row-card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px;}
-  .row-card .top{display:flex; justify-content:space-between; font-size: clamp(12px, 1.5vw, 14px); font-weight:600; margin-bottom:4px;}
-  .row-card .mid{font-size: clamp(11px, 1.3vw, 12.5px); color:var(--muted); margin-bottom:6px;}
-  
-  .badge{display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; cursor:pointer; user-select:none; transition: all 0.2s ease;}
-  .badge.active-filter { outline: 2px solid var(--accent); box-shadow: 0 0 8px rgba(91, 141, 239, 0.4); transform: scale(1.04); }
-  .badge.lunas, .badge.transferred, .badge.done, .badge.completed, .badge.balanced{background:rgba(61,220,151,0.15); color:var(--green);}
-  .badge.open, .badge.partial{background:rgba(255,184,77,0.15); color:var(--amber);}
-  .badge.belum, .badge.outstanding{background:rgba(255,107,107,0.15); color:var(--red);}
-  .badge.overpaid{background:rgba(255,184,77,0.2); color:var(--amber); border:1px solid var(--amber);}
-  
-  .amount{font-weight:700;}
-  footer{text-align:center; color:var(--muted); font-size:11px; padding:20px 0;}
-  
-  .filters{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:12px; margin-bottom:14px;}
-  .filters .frow{margin-bottom:10px;}
-  .filters .frow:last-child{margin-bottom:0;}
-  .filters label{display:block; font-size:11px; color:var(--muted); margin-bottom:4px;}
-  .filters select{width:100%; background:var(--card2); color:var(--txt); border:1px solid var(--border); border-radius:8px; padding:8px 10px; font-size:13px;}
-  .filters .freset{display:inline-block; margin-top:8px; font-size:11.5px; color:var(--accent); background:none; border:none; padding:0; cursor:pointer;}
-  .empty-state{text-align:center; color:var(--muted); font-size:12.5px; padding:18px 0;}
-  .proof-link{display:inline-flex; align-items:center; gap:6px; margin-top:8px; padding:7px 12px; background:var(--card2); border:1px solid var(--border); border-radius:8px; color:var(--accent); font-size:12px; text-decoration:none; font-weight:600;}
-  .chips{display:flex; flex-wrap:wrap; gap:6px;}
-  .chip{display:flex; align-items:center; gap:6px; background:var(--card2); border:1px solid var(--border); border-radius:20px; padding:6px 10px; font-size:12px; cursor:pointer;}
-  .chip input{accent-color:var(--accent);}
-  .chip.checked{border-color:var(--accent); color:var(--accent);}
-  .filters-inline{display:flex; gap:6px; margin-top:4px;}
-  .filters-inline button{flex:1; background:var(--card2); border:1px solid var(--border); color:var(--muted); font-size:11px; padding:5px; border-radius:8px; cursor:pointer;}
-  #loading{position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,17,21,0.85); z-index:999; display:flex; justify-content:center; align-items:center; font-size:14px; font-weight:600;}
-
-  /* Progress Bar Styles */
-  .progress-card-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
-  .progress-bar-container { width: 100%; height: 16px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; position: relative; display: flex; }
-  .progress-bar-fill { height: 100%; background: var(--green); transition: width 0.4s ease; border-radius: 9px; }
-  .progress-bar-remaining { height: 100%; background: var(--accent); flex: 1; opacity: 0.6; }
-  .progress-legend { display: flex; justify-content: space-between; margin-top: 10px; font-size: 11.5px; }
-  .legend-item { display: flex; align-items: center; gap: 6px; }
-  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .legend-dot.green { background: var(--green); }
-  .legend-dot.blue { background: var(--accent); opacity: 0.8; }
-
-  /* Recipient & Invoice Progress Cards */
-  .progress-card-item { background: var(--card2); border: 1px solid var(--border); border-radius: 12px; padding: clamp(10px, 1.5vw, 14px); margin-bottom: 10px; transition: background 0.3s ease, border-color 0.3s ease; }
-  .progress-card-item.has-overpaid { border-left: 3px solid var(--amber); }
-  .progress-card-item.has-outstanding { border-left: 3px solid var(--red); }
-  .progress-card-item:last-child { margin-bottom: 0; }
-  .progress-card-header-inner { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: clamp(12px, 1.5vw, 13.5px); margin-bottom: 8px; }
-  .progress-card-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; margin-top: 8px; font-size: clamp(10.5px, 1.2vw, 12px); color: var(--muted); }
-  .progress-card-caption span strong { color: var(--txt); }
-
-  /* Data Table Styling */
-  .data-table-wrap {
-    overflow-x: auto;
+  .card {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 12px;
-    margin-top: 10px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s ease, border-color 0.3s ease;
+  }
+  .card .label { font-size: 11.5px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .card .value { font-size: 18px; font-weight: 700; }
+  .card .value.green { color: var(--green-light); }
+  .card .value.red { color: var(--red); }
+  .card .value.amber { color: var(--amber); }
+  .card.full { grid-column: 1 / -1; }
+  
+  .section h2 { font-size: 16px; font-weight: 700; margin: 24px 0 12px; color: var(--txt); }
+
+  .scrollable-progress-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
     margin-bottom: 16px;
+    max-height: 400px;
+    overflow-y: auto;
   }
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-    text-align: left;
+  .scrollable-progress-wrap::-webkit-scrollbar { width: 6px; }
+  .scrollable-progress-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .row-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    transition: transform 0.15s ease, border-color 0.15s ease;
   }
-  .data-table th {
-    background: var(--card2);
-    color: var(--muted);
+  .row-card:hover { border-color: var(--accent); }
+  .row-card .top { display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .row-card .mid { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
     font-weight: 600;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s ease;
   }
-  .data-table td {
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
-    color: var(--txt);
-    white-space: nowrap;
-  }
-  .data-table tr:last-child td {
-    border-bottom: none;
-  }
-  .data-table tr:hover td {
+  .badge.active-filter { outline: 2px solid var(--accent); box-shadow: 0 0 8px rgba(56, 139, 253, 0.4); transform: scale(1.03); }
+  .badge.lunas, .badge.transferred, .badge.done, .badge.completed, .badge.balanced { background: rgba(35, 134, 54, 0.2); color: var(--green-light); }
+  .badge.open, .badge.partial { background: rgba(210, 153, 34, 0.2); color: var(--amber); }
+  .badge.belum, .badge.outstanding { background: rgba(218, 54, 51, 0.2); color: var(--red); }
+  .badge.overpaid { background: rgba(210, 153, 34, 0.25); color: var(--amber); border: 1px solid var(--amber); }
+  
+  .amount { font-weight: 700; }
+  footer { text-align: center; color: var(--muted); font-size: 11.5px; padding: 24px 0 12px; }
+  
+  .filters { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+  .filters .frow { margin-bottom: 10px; }
+  .filters .frow:last-child { margin-bottom: 0; }
+  .filters label { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  .filters select { width: 100%; background: var(--card2); color: var(--txt); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 13px; outline: none; }
+  .filters select:focus { border-color: var(--accent); }
+  .filters .freset { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--accent); background: none; border: none; padding: 0; cursor: pointer; font-weight: 600; }
+  .empty-state { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 0; }
+  .proof-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 6px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 6px; color: var(--accent); font-size: 12px; text-decoration: none; font-weight: 600; transition: border-color 0.2s ease; }
+  .proof-link:hover { border-color: var(--accent); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: flex; align-items: center; gap: 6px; background: var(--card2); border: 1px solid var(--border); border-radius: 16px; padding: 5px 12px; font-size: 12px; cursor: pointer; user-select: none; transition: all 0.2s ease; }
+  .chip input { accent-color: var(--accent); }
+  .chip.checked { border-color: var(--accent); color: var(--accent); background: rgba(56, 139, 253, 0.1); }
+
+  .filters-inline { display: flex; gap: 8px; margin-top: 8px; }
+  .filters-inline button { flex: 1; background: var(--card2); border: 1px solid var(--border); color: var(--muted); font-size: 12px; padding: 6px; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s ease; }
+  .filters-inline button:hover { color: var(--txt); border-color: var(--accent); }
+
+  #loading-banner {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
     background: var(--card2);
+    border: 1px solid var(--border);
+    padding: 10px 16px;
+    border-radius: 30px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--txt);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 999;
+    transition: opacity 0.3s ease;
   }
+
+  .spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--border);
+    border-top: 2px solid var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+  .progress-card-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+  .progress-bar-container { width: 100%; height: 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative; display: flex; }
+  .progress-bar-fill { height: 100%; background: var(--green-light); transition: width 0.4s ease; }
+  .progress-bar-remaining { height: 100%; background: var(--accent); flex: 1; opacity: 0.5; }
+  .progress-legend { display: flex; justify-content: space-between; margin-top: 10px; font-size: 11.5px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .legend-dot.green { background: var(--green-light); }
+  .legend-dot.blue { background: var(--accent); }
+
+  .progress-card-item { background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 10px; transition: background 0.2s ease, border-color 0.2s ease; }
+  .progress-card-item.has-overpaid { border-left: 4px solid var(--amber); }
+  .progress-card-item.has-outstanding { border-left: 4px solid var(--red); }
+  .progress-card-item:last-child { margin-bottom: 0; }
+  .progress-card-header-inner { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 13.5px; margin-bottom: 8px; }
+  .progress-card-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .progress-card-caption span strong { color: var(--txt); }
+
+  .fee-summary-banner { display: flex; justify-content: space-between; align-items: center; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-top: 8px; margin-bottom: 12px; }
+
+  .data-table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-top: 8px; margin-bottom: 20px; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+  .data-table th { background: var(--card2); color: var(--muted); font-weight: 600; padding: 10px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--txt); white-space: nowrap; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--card2); }
 </style>
 </head>
 <body>
 
-<div id="loading">Memuat data dari Google Sheets...</div>
+<div id="loading-banner">
+  <div class="spinner"></div>
+  <span id="loading-text">Memuat data...</span>
+</div>
 
 <header>
   <div class="header-left">
-    <div>
-      <h1>Operational Fee Monitoring</h1>
-      <p>Dashboard ringkasan fee, payment, withdrawal & transfer</p>
-    </div>
+    <h1>Operational Fee Monitoring</h1>
+    <p>Dashboard ringkasan fee, payment, withdrawal & transfer</p>
   </div>
   <button class="theme-toggle-btn" id="themeToggle">
     <span id="themeIcon">🌙</span> <span id="themeText">Dark</span>
@@ -279,7 +310,7 @@
   <section class="section active" id="overview">
     <div class="filters">
       <div class="frow">
-        <label>Tanggal Withdrawal (pilih filter)</label>
+        <label>Filter Tanggal Withdrawal</label>
         <div class="chips" id="ovWdChips"></div>
         <div class="filters-inline">
           <button id="ovSelectAll">Pilih Semua</button>
@@ -291,7 +322,7 @@
     <div class="overview-top-grid">
       <div class="card overview-chart-card">
         <h3>Status Pembayaran</h3>
-        <div style="width:100%; height:clamp(160px, 20vh, 210px); position:relative; display:flex; justify-content:center; align-items:center;">
+        <div style="width:100%; height:180px; position:relative; display:flex; justify-content:center; align-items:center;">
           <canvas id="chartPayStatus"></canvas>
         </div>
       </div>
@@ -304,15 +335,15 @@
       </div>
     </div>
 
-    <div class="card full" style="margin-bottom:16px;">
+    <div class="card full" style="margin-bottom:20px;">
       <div class="progress-card-header">
         <div>
           <div class="label">Total Withdrawal vs Total Transfer</div>
-          <div class="value" id="ov-withdrawal" style="font-size:clamp(14px, 1.8vw, 17px);">-</div>
+          <div class="value" id="ov-withdrawal" style="font-size:16px;">-</div>
         </div>
         <div style="text-align:right;">
           <span class="badge lunas" id="ov-transfer-pct">0% Transferred</span>
-          <div class="value green" id="ov-transfer" style="font-size:clamp(13px, 1.6vw, 15px); margin-top:2px;">-</div>
+          <div class="value green" id="ov-transfer" style="font-size:15px; margin-top:2px;">-</div>
         </div>
       </div>
 
@@ -334,12 +365,10 @@
     </div>
 
     <h2>Priority Fee per Invoice</h2>
-    <!-- Interactive Clickable Invoice Status Summary Banner -->
     <div id="invoiceSummaryMetrics" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;"></div>
     <div class="scrollable-progress-wrap" id="invoiceProgressList"></div>
 
     <h2>Priority Fee per Recipient</h2>
-    <!-- Interactive Clickable Recipient Status Summary Banner -->
     <div id="recipientSummaryMetrics" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;"></div>
     <div class="scrollable-progress-wrap" id="recipientProgressList"></div>
   </section>
@@ -348,7 +377,7 @@
     <div class="filters">
       <div class="frow"><label>Tanggal Withdrawal</label><select id="feeFilterTglWd"><option value="">Semua Tanggal</option></select></div>
       <div class="frow"><label>Penerima</label><select id="feeFilterRecipient"><option value="">Semua Penerima</option></select></div>
-      <button class="freset" id="feeReset">Reset filter</button>
+      <button class="freset" id="feeReset">Reset Filter</button>
     </div>
     <h2>Fee per Recipient</h2>
     <div id="feeList"></div>
@@ -357,7 +386,7 @@
   <section class="section" id="payment">
     <div class="filters">
       <div class="frow"><label>Periode Tanggal Withdrawal</label><select id="payFilterTglWd"><option value="">Semua Tanggal</option></select></div>
-      <button class="freset" id="payReset">Reset filter</button>
+      <button class="freset" id="payReset">Reset Filter</button>
     </div>
     <h2>Payment Batch (04_WORK_PAYMENT_CALC)</h2>
     <div id="paymentList"></div>
@@ -366,7 +395,7 @@
   <section class="section" id="withdrawal">
     <div class="filters">
       <div class="frow"><label>Tanggal Withdrawal</label><select id="filterTglWithdrawal"><option value="">Semua Tanggal</option></select></div>
-      <button class="freset" id="resetFilters">Reset filter</button>
+      <button class="freset" id="resetFilters">Reset Filter</button>
     </div>
     <h2>Withdrawal</h2>
     <div id="withdrawalList"></div>
@@ -377,7 +406,7 @@
   <section class="section" id="invoice">
     <div class="filters">
       <div class="frow"><label>Tanggal Pembayaran Invoice</label><select id="invFilterTglBayar"><option value="">Semua Tanggal</option></select></div>
-      <button class="freset" id="invReset">Reset filter</button>
+      <button class="freset" id="invReset">Reset Filter</button>
     </div>
     <h2>Sales Invoice</h2>
     <div id="invoiceList"></div>
@@ -386,7 +415,7 @@
   <section class="section" id="proof">
     <div class="filters">
       <div class="frow"><label>Tanggal Withdrawal</label><select id="proofFilterTglWd"><option value="">Semua Tanggal</option></select></div>
-      <button class="freset" id="proofReset">Reset filter</button>
+      <button class="freset" id="proofReset">Reset Filter</button>
     </div>
     <h2>Bukti Transfer (Google Drive)</h2>
     <div id="proofList"></div>
@@ -397,13 +426,13 @@
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbxalausGPecZaN9EcDN9rRbg2A8nUhT9hDS94J6L_BNLI_nnGj9Qm_YBDVI8Q1knPdk/exec";
+const CACHE_KEY = "OP_FEE_DASHBOARD_DATA";
 
 let DATA = {};
 let chartPayStatus;
 const wdIdToDate = {};
 let allWdDates = [];
 
-// Track selected status filters for interactive clicks ('ALL', 'UNPAID', 'PARTIAL', 'OVERPAID', 'LUNAS')
 let activeInvoiceStatusFilter = 'ALL';
 let activeRecipientStatusFilter = 'ALL';
 
@@ -429,12 +458,83 @@ themeToggleBtn.addEventListener('click', () => {
 
 function updateChartColors() {
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
-  const textColor = isLight ? '#1f2329' : '#e8eaef';
+  const textColor = isLight ? '#1f2328' : '#f0f6fc';
 
   if(chartPayStatus) {
     chartPayStatus.options.plugins.legend.labels.color = textColor;
     chartPayStatus.update();
   }
+}
+
+// Promisified JSONP Loader to bypass CORS restrictions safely
+function fetchJSONP(url) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    
+    window.callback = function(data) {
+      resolve(data);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+      delete window.callback;
+    };
+
+    script.src = url;
+    script.onerror = function() {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+      delete window.callback;
+      reject(new Error("Failed to load script from " + url));
+    };
+
+    document.body.appendChild(script);
+  });
+}
+
+async function initDashboard() {
+  // 1. Instant load from local storage cache if available
+  const cached = localStorage.getItem(CACHE_KEY);
+  if (cached) {
+    try {
+      DATA = JSON.parse(cached);
+      processData(DATA);
+      document.getElementById('loading-text').textContent = "Sinkronisasi data terbaru...";
+    } catch (e) {
+      console.warn("Failed to load cached dashboard data.", e);
+    }
+  }
+
+  // 2. Fetch fresh data via JSONP in background
+  try {
+    const data = await fetchJSONP(API_URL);
+    DATA = data;
+    localStorage.setItem(CACHE_KEY, JSON.stringify(DATA));
+    processData(DATA);
+    
+    const banner = document.getElementById('loading-banner');
+    if (banner) {
+      banner.style.opacity = '0';
+      setTimeout(() => banner.style.display = 'none', 300);
+    }
+  } catch (err) {
+    console.error("Data fetch failed:", err);
+    const banner = document.getElementById('loading-banner');
+    if (!cached) {
+      document.getElementById('loading-text').textContent = "Gagal memuat data. Periksa koneksi internet Anda.";
+    } else if (banner) {
+      banner.style.opacity = '0';
+      setTimeout(() => banner.style.display = 'none', 300);
+    }
+  }
+}
+
+function processData(data) {
+  if (Array.isArray(data.withdrawals)) {
+    data.withdrawals.forEach(w => { wdIdToDate[w.withdrawal_id] = w.withdrawal_date; });
+  }
+  setupFiltersAndChips();
+  renderAll();
 }
 
 function parseNum(val) {
@@ -535,28 +635,6 @@ document.querySelectorAll('.tab').forEach(t=>{
   });
 });
 
-function initDashboard() {
-  const script = document.createElement('script');
-  window.callback = function(data) {
-    DATA = data;
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('mainContainer').style.opacity = '1';
-    
-    if (Array.isArray(DATA.withdrawals)) {
-      DATA.withdrawals.forEach(w => { wdIdToDate[w.withdrawal_id] = w.withdrawal_date; });
-    }
-    setupFiltersAndChips();
-    renderAll();
-    document.body.removeChild(script);
-    delete window.callback;
-  };
-  script.src = API_URL;
-  script.onerror = function() {
-    document.getElementById('loading').textContent = "Gagal memuat data. Periksa kembali URL deployment Web App Anda.";
-  };
-  document.body.appendChild(script);
-}
-
 function setupFiltersAndChips() {
   allWdDates = DATA.withdrawals ? [...new Set(DATA.withdrawals.map(w=>w.withdrawal_date).filter(Boolean))].sort() : [];
   const ovWdChipsEl = document.getElementById('ovWdChips');
@@ -572,14 +650,14 @@ function setupFiltersAndChips() {
     });
   });
 
-  document.getElementById('ovSelectAll').addEventListener('click', () => {
+  document.getElementById('ovSelectAll').onclick = () => {
     ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = true; cb.closest('.chip').classList.add('checked'); });
     renderOverview();
-  });
-  document.getElementById('ovSelectNone').addEventListener('click', () => {
+  };
+  document.getElementById('ovSelectNone').onclick = () => {
     ovWdChipsEl.querySelectorAll('input[type=checkbox]').forEach(cb=>{ cb.checked = false; cb.closest('.chip').classList.remove('checked'); });
     renderOverview();
-  });
+  };
 
   feeFilterTglWd = document.getElementById('feeFilterTglWd');
   feeFilterRecipient = document.getElementById('feeFilterRecipient');
@@ -611,17 +689,17 @@ function setupFiltersAndChips() {
   const invDates = DATA.invoices ? [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN'] || i['tanggal_pembayaran']).filter(Boolean))].sort() : [];
   invDates.forEach(d=> invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
 
-  [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.addEventListener('change', renderFee));
-  payFilterTglWd.addEventListener('change', renderPayment);
-  selTglWithdrawal.addEventListener('change', renderWithdrawalTab);
-  invFilterTglBayar.addEventListener('change', renderInvoice);
-  proofFilterTglWd.addEventListener('change', renderProof);
+  [feeFilterTglWd, feeFilterRecipient].forEach(el=>el.onchange = renderFee);
+  payFilterTglWd.onchange = renderPayment;
+  selTglWithdrawal.onchange = renderWithdrawalTab;
+  invFilterTglBayar.onchange = renderInvoice;
+  proofFilterTglWd.onchange = renderProof;
 
-  document.getElementById('feeReset').addEventListener('click', ()=>{ feeFilterTglWd.value=''; feeFilterRecipient.value=''; renderFee(); });
-  document.getElementById('payReset').addEventListener('click', ()=>{ payFilterTglWd.value=''; renderPayment(); });
-  document.getElementById('resetFilters').addEventListener('click', ()=>{ selTglWithdrawal.value=''; renderWithdrawalTab(); });
-  document.getElementById('invReset').addEventListener('click', ()=>{ invFilterTglBayar.value=''; renderInvoice(); });
-  document.getElementById('proofReset').addEventListener('click', ()=>{ proofFilterTglWd.value=''; renderProof(); });
+  document.getElementById('feeReset').onclick = ()=>{ feeFilterTglWd.value=''; feeFilterRecipient.value=''; renderFee(); };
+  document.getElementById('payReset').onclick = ()=>{ payFilterTglWd.value=''; renderPayment(); };
+  document.getElementById('resetFilters').onclick = ()=>{ selTglWithdrawal.value=''; renderWithdrawalTab(); };
+  document.getElementById('invReset').onclick = ()=>{ invFilterTglBayar.value=''; renderInvoice(); };
+  document.getElementById('proofReset').onclick = ()=>{ proofFilterTglWd.value=''; renderProof(); };
 }
 
 function getOvSelectedDates(){
@@ -674,10 +752,7 @@ function renderOverview(){
   document.getElementById('ov-transfer-pct').textContent = `${pctTransfer.toFixed(1)}% Transferred`;
   document.getElementById('ov-bar-fill').style.width = `${pctTransfer}%`;
 
-  // Render Invoice Progress Bars (Interactive Filtering)
   renderInvoiceProgressList(total_paid_work_calc, total_entitlement);
-
-  // Render Recipient Progress Cards (Interactive Filtering)
   renderRecipientProgressList(filteredFee, filteredPayments);
 
   const payStatusCounts = {};
@@ -691,13 +766,13 @@ function renderOverview(){
       type: 'doughnut',
       data: {
         labels: Object.keys(payStatusCounts),
-        datasets: [{ data: Object.values(payStatusCounts), backgroundColor: ['#3ddc97','#ffb84d','#ff6b6b','#5b8def'] }]
+        datasets: [{ data: Object.values(payStatusCounts), backgroundColor: ['#2ea043','#d29922','#da3633','#388bfd'] }]
       },
       options: { 
         responsive: true,
         maintainAspectRatio: false,
         plugins: { 
-          legend: { position:'bottom', labels:{ color:'#e8eaef', font:{size:10}, boxWidth: 10, padding: 8 } } 
+          legend: { position:'bottom', labels:{ color:'#f0f6fc', font:{size:10}, boxWidth: 10, padding: 8 } } 
         } 
       }
     });
@@ -728,10 +803,7 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
     const amt = parseNum(item.invoice_amount || item.fee_amount || item.amount || item['TOTAL INVOICE'] || item['NILAI FEE'] || item['JUMLAH FEE'] || item['FEE'] || 0);
 
     if (!invMap[invNum]) {
-      invMap[invNum] = {
-        invoice_number: invNum,
-        total_fee: 0
-      };
+      invMap[invNum] = { invoice_number: invNum, total_fee: 0 };
     }
     invMap[invNum].total_fee += amt;
   });
@@ -760,24 +832,12 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
       lunasInvoiceCount++;
     } else {
       unpaidInvoiceCount++;
-      if (isPartial) {
-        partialInvoiceCount++;
-      }
+      if (isPartial) partialInvoiceCount++;
     }
 
-    return {
-      ...inv,
-      paidForInv,
-      outstandingForInv,
-      isOverpaid,
-      overpaidAmt,
-      pctPaid,
-      isLunas,
-      isPartial
-    };
+    return { ...inv, paidForInv, outstandingForInv, isOverpaid, overpaidAmt, pctPaid, isLunas, isPartial };
   });
 
-  // Render Interactive Clickable Status Metrics Banner
   if (metricsEl) {
     metricsEl.innerHTML = `
       <span class="badge ${activeInvoiceStatusFilter === 'ALL' ? 'active-filter' : ''}" style="background:var(--card2); border:1px solid var(--border); color:var(--txt);" onclick="setInvoiceFilter('ALL')">Total: ${totalInvoiceCount} Invoices</span>
@@ -788,16 +848,14 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
     `;
   }
 
-  // Filter based on active clicked status
   let displayList = invList.filter(inv => {
     if (activeInvoiceStatusFilter === 'UNPAID') return !inv.isLunas;
     if (activeInvoiceStatusFilter === 'PARTIAL') return inv.isPartial;
     if (activeInvoiceStatusFilter === 'OVERPAID') return inv.isOverpaid;
     if (activeInvoiceStatusFilter === 'LUNAS') return inv.isLunas;
-    return true; // 'ALL'
+    return true;
   });
 
-  // Sort: Overpaid first, then Largest Outstanding to Smallest
   displayList.sort((a, b) => {
     if (a.isOverpaid && !b.isOverpaid) return -1;
     if (!a.isOverpaid && b.isOverpaid) return 1;
@@ -810,7 +868,6 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
     return;
   }
 
-  // Render ALL matching items (scrollable container shows ~5 items initially)
   displayList.forEach(inv => {
     let badgeHtml = '';
     if (inv.isOverpaid) {
@@ -825,7 +882,7 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
 
     const balanceText = inv.isOverpaid 
       ? `Overpaid: <strong style="color:var(--amber);">${fmtIDR(inv.overpaidAmt)}</strong>` 
-      : `Outstanding: <strong style="color:${inv.isLunas ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(inv.outstandingForInv)}</strong>`;
+      : `Outstanding: <strong style="color:${inv.isLunas ? 'var(--green-light)' : 'var(--amber)'};">${fmtIDR(inv.outstandingForInv)}</strong>`;
 
     invProgressListEl.innerHTML += `
       <div class="progress-card-item ${inv.outstandingForInv > 1 ? 'has-outstanding' : ''} ${inv.isOverpaid ? 'has-overpaid' : ''}">
@@ -833,15 +890,13 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
           <span>🧾 ${inv.invoice_number}</span>
           ${badgeHtml}
         </div>
-
         <div class="progress-bar-container">
           <div class="progress-bar-fill" style="width: ${Math.min(100, inv.pctPaid)}%;"></div>
           ${inv.pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
         </div>
-
         <div class="progress-card-caption">
           <span>Fee Entitlement: <strong>${fmtIDR(inv.total_fee)}</strong></span>
-          <span>Paid (Net Est.): <strong style="color:var(--green);">${fmtIDR(inv.paidForInv)}</strong></span>
+          <span>Paid (Net Est.): <strong style="color:var(--green-light);">${fmtIDR(inv.paidForInv)}</strong></span>
           <span>${balanceText}</span>
         </div>
       </div>
@@ -894,15 +949,12 @@ function renderRecipientProgressList(filteredFee, filteredPayments) {
       lunasRecipientCount++;
     } else {
       unpaidRecipientCount++;
-      if (isPartial) {
-        partialRecipientCount++;
-      }
+      if (isPartial) partialRecipientCount++;
     }
     
     return { ...r, diff, isOverpaid, outstanding, isLunas, isPartial, pctPaid };
   });
 
-  // Render Interactive Clickable Status Metrics Banner for Recipients
   const recMetricsEl = document.getElementById('recipientSummaryMetrics');
   if (recMetricsEl) {
     recMetricsEl.innerHTML = `
@@ -914,16 +966,14 @@ function renderRecipientProgressList(filteredFee, filteredPayments) {
     `;
   }
 
-  // Filter based on active clicked status
   let displayList = recipientList.filter(r => {
     if (activeRecipientStatusFilter === 'UNPAID') return !r.isLunas;
     if (activeRecipientStatusFilter === 'PARTIAL') return r.isPartial;
     if (activeRecipientStatusFilter === 'OVERPAID') return r.isOverpaid;
     if (activeRecipientStatusFilter === 'LUNAS') return r.isLunas;
-    return true; // 'ALL'
+    return true;
   });
 
-  // Sort: Overpaid first, then Largest Outstanding to Smallest
   displayList.sort((a, b) => {
     if (a.isOverpaid && !b.isOverpaid) return -1;
     if (!a.isOverpaid && b.isOverpaid) return 1;
@@ -939,7 +989,6 @@ function renderRecipientProgressList(filteredFee, filteredPayments) {
     return;
   }
 
-  // Render ALL matching recipient items (scrollable container shows ~5 items initially)
   displayList.forEach(r => {
     let statusBadge = '';
     if (r.isOverpaid) {
@@ -954,7 +1003,7 @@ function renderRecipientProgressList(filteredFee, filteredPayments) {
 
     const balanceText = r.isOverpaid 
       ? `Overpaid: <strong style="color:var(--amber);">${fmtIDR(r.diff)}</strong>` 
-      : `Outstanding: <strong style="color:${r.isLunas ? 'var(--green)' : 'var(--amber)'};">${fmtIDR(r.outstanding)}</strong>`;
+      : `Outstanding: <strong style="color:${r.isLunas ? 'var(--green-light)' : 'var(--amber)'};">${fmtIDR(r.outstanding)}</strong>`;
 
     progressListEl.innerHTML += `
       <div class="progress-card-item ${r.outstanding > 1 ? 'has-outstanding' : ''} ${r.isOverpaid ? 'has-overpaid' : ''}">
@@ -962,15 +1011,13 @@ function renderRecipientProgressList(filteredFee, filteredPayments) {
           <span>${r.name}</span>
           ${statusBadge}
         </div>
-        
         <div class="progress-bar-container">
           <div class="progress-bar-fill" style="width: ${Math.min(100, r.pctPaid)}%;"></div>
           ${r.pctPaid < 100 ? '<div class="progress-bar-remaining"></div>' : ''}
         </div>
-
         <div class="progress-card-caption">
           <span>Total Fee: <strong>${fmtIDR(r.totalFee)}</strong></span>
-          <span>Paid (Net): <strong style="color:var(--green);">${fmtIDR(r.paidFee)}</strong></span>
+          <span>Paid (Net): <strong style="color:var(--green-light);">${fmtIDR(r.paidFee)}</strong></span>
           <span>${balanceText}</span>
         </div>
       </div>
@@ -1000,7 +1047,7 @@ function renderFee(){
   
   filtered.forEach(r=>{
     feeListEl.innerHTML += `
-      <div class="row-card" style="border-left: 3px solid var(--accent);">
+      <div class="row-card" style="border-left: 4px solid var(--accent);">
         <div class="top">
           <span style="font-size:14px; font-weight:700;">${(r.name || r.recipient_name || '').toUpperCase()}</span>
           <span class="amount" style="font-size:15px; color:var(--accent);">${fmtIDR(r.amount)}</span>
@@ -1030,7 +1077,7 @@ function renderFee(){
           <div class="fee-summary-banner">
             <div>
               <div style="font-size:11px; color:var(--muted); font-weight:600;">TOTAL BREAKDOWN AMOUNT</div>
-              <div style="font-size:18px; font-weight:800; color:var(--green); margin-top:2px;">${fmtIDR(totalSum)}</div>
+              <div style="font-size:18px; font-weight:800; color:var(--green-light); margin-top:2px;">${fmtIDR(totalSum)}</div>
             </div>
             <span class="badge lunas" style="font-size:11px;">${recipientItems.length} Item Rows</span>
           </div>
@@ -1091,7 +1138,7 @@ function renderPayment(){
       <div class="row-card">
         <div class="top"><span>${(p.recipient_name||p.penerima||'').toUpperCase()}</span><span class="badge ${badgeClass(p.status)}">${p.status||'OPEN'}</span></div>
         <div class="mid">${p.payment_batch_id||''} &middot; ${p.invoice_count||0} invoice &middot; ${p.tax_method||''}</div>
-        <div class="top"><span style="font-weight:400;color:#8b92a5;">Net Amount</span><span class="amount">${fmtIDR(p.net_amount)}</span></div>
+        <div class="top"><span style="font-weight:400;color:var(--muted);">Net Amount</span><span class="amount">${fmtIDR(p.net_amount)}</span></div>
       </div>`;
   });
 }
@@ -1111,7 +1158,7 @@ function renderWithdrawalTab(){
       <div class="row-card">
         <div class="top"><span>${w.withdrawal_id}</span><span class="badge ${badgeClass(w.reconciliation_status)}">${w.reconciliation_status||'OPEN'}</span></div>
         <div class="mid">${w.withdrawal_date} &middot; ${w.description||''}</div>
-        <div class="top"><span style="font-weight:400;color:#8b92a5;">Amount</span><span class="amount">${fmtIDR(w.withdrawal_amount)}</span></div>
+        <div class="top"><span style="font-weight:400;color:var(--muted);">Amount</span><span class="amount">${fmtIDR(w.withdrawal_amount)}</span></div>
       </div>`;
   });
 
@@ -1149,13 +1196,13 @@ function renderInvoice(){
       <div class="row-card">
         <div class="top"><span>${invNum}</span><span class="badge ${badgeClass(status)}">${status}</span></div>
         <div class="mid">${pt}${pt && kapal ? ' &middot; ' : ''}${kapal}</div>
-        <div class="top"><span style="font-weight:400;color:#8b92a5;">Total</span><span class="amount">${fmtIDR(totalVal)}</span></div>
+        <div class="top"><span style="font-weight:400;color:var(--muted);">Total</span><span class="amount">${fmtIDR(totalVal)}</span></div>
       </div>`;
   });
 }
 
 function renderProof(){
-  const tgl = proofFilterTglWdß.value;
+  const tgl = proofFilterTglWd.value;
   const filtered = tgl ? (DATA.transfers||[]).filter(t=>wdIdToDate[t.withdrawal_id]===tgl) : (DATA.transfers||[]);
   const proofListEl = document.getElementById('proofList');
   proofListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data</div>';
