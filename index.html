@@ -171,7 +171,7 @@
     transition: all 0.15s ease;
     color: var(--muted);
   }
-  .chip input { display: none; } /* Hide raw checkbox */
+  .chip input { display: none; }
   .chip.checked {
     border-color: var(--accent);
     color: var(--accent);
@@ -241,7 +241,10 @@
     gap: 12px;
   }
 
-  @media (max-width: 520px) { .overview-metrics-col { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) { 
+    .overview-metrics-col { grid-template-columns: 1fr; }
+    .progress-card-header { flex-direction: column; align-items: flex-start !important; gap: 8px; }
+  }
 
   .card {
     background: var(--card);
@@ -337,15 +340,21 @@
 
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-  .progress-card-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
+  .progress-card-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: flex-end; 
+    margin-bottom: 12px;
+    gap: 12px;
+  }
   .progress-bar-container { width: 100%; height: 10px; background: var(--card2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; position: relative; display: flex; }
   .progress-bar-fill { height: 100%; background: var(--green-light); transition: width 0.4s ease; }
-  .progress-bar-remaining { height: 100%; background: var(--accent); flex: 1; opacity: 0.5; }
+  .progress-bar-remaining { height: 100%; background: var(--amber); flex: 1; opacity: 0.4; }
   .progress-legend { display: flex; justify-content: space-between; margin-top: 8px; font-size: 11px; }
   .legend-item { display: flex; align-items: center; gap: 6px; }
   .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
   .legend-dot.green { background: var(--green-light); }
-  .legend-dot.blue { background: var(--accent); }
+  .legend-dot.amber { background: var(--amber); }
 
   .progress-card-item { background: var(--card2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; transition: background 0.2s ease, border-color 0.2s ease; }
   .progress-card-item.has-overpaid { border-left: 3px solid var(--amber); }
@@ -423,15 +432,23 @@
       </div>
     </div>
 
+    <!-- UPDATED: Fee Entitlement vs Total Fee Paid + Remaining Fee -->
     <div class="card full" style="margin-bottom:20px;">
       <div class="progress-card-header">
         <div>
-          <div class="label">Total Withdrawal vs Total Transfer</div>
-          <div class="value" id="ov-withdrawal" style="font-size:16px;">-</div>
+          <div class="label">Total Fee Entitlement</div>
+          <div class="value" id="ov-entitlement-progress" style="font-size:16px;">-</div>
         </div>
+
+        <!-- NEW: Remaining Fee to be Paid in Center -->
+        <div style="text-align:center;">
+          <div class="label" style="color:var(--amber);">Remaining Fee to Pay</div>
+          <div class="value amber" id="ov-remaining-progress" style="font-size:16px;">-</div>
+        </div>
+
         <div style="text-align:right;">
-          <span class="badge lunas" id="ov-transfer-pct">0% Transferred</span>
-          <div class="value green" id="ov-transfer" style="font-size:15px; margin-top:2px;">-</div>
+          <span class="badge lunas" id="ov-paid-pct">0% Paid</span>
+          <div class="value green" id="ov-paid-progress" style="font-size:15px; margin-top:2px;">-</div>
         </div>
       </div>
 
@@ -443,11 +460,11 @@
       <div class="progress-legend">
         <div class="legend-item">
           <span class="legend-dot green"></span>
-          <span style="color:var(--txt);">Transferred</span>
+          <span style="color:var(--txt);">Total Fee Paid</span>
         </div>
         <div class="legend-item">
-          <span class="legend-dot blue"></span>
-          <span style="color:var(--muted);">Remaining Balance</span>
+          <span class="legend-dot amber"></span>
+          <span style="color:var(--muted);">Remaining Fee to Pay</span>
         </div>
       </div>
     </div>
@@ -876,17 +893,20 @@ function renderOverview(){
   const withdrawal_balance = total_withdrawal - total_transfer;
   const outstanding_fee = Math.max(0, total_entitlement - total_paid_work_calc);
 
-  const pctTransfer = total_withdrawal > 0 ? (total_transfer / total_withdrawal) * 100 : 0;
+  // Ratio of Total Paid vs Total Fee Entitlement
+  const pctPaid = total_entitlement > 0 ? (total_paid_work_calc / total_entitlement) * 100 : 0;
 
   document.getElementById('ov-entitlement').textContent = fmtIDR(total_entitlement);
   document.getElementById('ov-paid').textContent = fmtIDR(total_paid_work_calc);
   document.getElementById('ov-outstanding').textContent = fmtIDR(outstanding_fee);
   document.getElementById('ov-balance').textContent = fmtIDR(withdrawal_balance);
   
-  document.getElementById('ov-withdrawal').textContent = fmtIDR(total_withdrawal);
-  document.getElementById('ov-transfer').textContent = fmtIDR(total_transfer);
-  document.getElementById('ov-transfer-pct').textContent = `${pctTransfer.toFixed(1)}% Transferred`;
-  document.getElementById('ov-bar-fill').style.width = `${pctTransfer}%`;
+  // Progress Bar Card Rendering
+  document.getElementById('ov-entitlement-progress').textContent = fmtIDR(total_entitlement);
+  document.getElementById('ov-remaining-progress').textContent = fmtIDR(outstanding_fee);
+  document.getElementById('ov-paid-progress').textContent = fmtIDR(total_paid_work_calc);
+  document.getElementById('ov-paid-pct').textContent = `${pctPaid.toFixed(1)}% Paid`;
+  document.getElementById('ov-bar-fill').style.width = `${Math.min(100, pctPaid)}%`;
 
   renderInvoiceProgressList(total_paid_work_calc, total_entitlement);
   renderRecipientProgressList(filteredFee, filteredPayments);
