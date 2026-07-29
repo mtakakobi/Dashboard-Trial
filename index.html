@@ -210,7 +210,6 @@
   }
   .filters-inline-actions button:hover { opacity: 1; text-decoration: underline; }
 
-  /* Refined Modern Dropdown Selector */
   .filters select {
     appearance: none;
     -webkit-appearance: none;
@@ -314,15 +313,46 @@
     padding: 12px 16px;
     margin-bottom: 8px;
     transition: all 0.15s ease;
+    position: relative;
   }
-  .row-card:hover {
+  .row-card.clickable {
+    cursor: pointer;
+  }
+  .row-card.clickable:hover {
     border-color: var(--accent);
     background: var(--card-hover);
     transform: translateY(-1px);
   }
-  .row-card .top { display: flex; justify-content: space-between; font-size: 13.5px; font-weight: 700; margin-bottom: 4px; }
-  .row-card .mid { font-size: 11.5px; color: var(--muted); margin-bottom: 4px; }
-  
+  .row-card.selected-recipient, .row-card.selected-item {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+  }
+
+  /* Universal Hover Tooltip Popup for Clickable Items */
+  .row-card.clickable::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: 16px;
+    top: -28px;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: translateY(4px);
+    z-index: 100;
+    white-space: nowrap;
+  }
+  .row-card.clickable:hover::after {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
   .badge {
     display: inline-block;
     padding: 3px 10px;
@@ -580,10 +610,10 @@
           <button id="feeSelectNone">Kosongkan</button>
         </div>
       </div>
-      <div style="display:flex; align-items:center; gap:12px; width:100%; margin-top:8px;">
-        <label>Penerima:</label>
-        <select id="feeFilterRecipient" style="flex:1;"><option value="">Semua Penerima</option></select>
-        <button class="freset" id="feeReset">Reset Filter</button>
+      <div id="recipientActiveFilterContainer" style="display:none; align-items:center; gap:12px; width:100%; margin-top:8px;">
+        <span style="font-size:12px; font-weight:700; color:var(--muted);">Filter Penerima Aktif:</span>
+        <span id="selectedRecipientLabel" style="font-size:12px; font-weight:800; color:var(--accent);"></span>
+        <button class="btn-secondary" id="clearRecipientFilterBtn" style="padding:4px 10px; font-size:11px;">Clear Filter Penerima</button>
       </div>
     </div>
     <h2>Fee per Recipient</h2>
@@ -621,11 +651,20 @@
           <button id="wdSelectNone">Kosongkan</button>
         </div>
       </div>
+      <div id="wdActiveFilterContainer" style="display:none; align-items:center; gap:12px; width:100%; margin-top:8px;">
+        <span style="font-size:12px; font-weight:700; color:var(--muted);">Filter Withdrawal:</span>
+        <span id="selectedWdLabel" style="font-size:12px; font-weight:800; color:var(--accent);"></span>
+        <button class="btn-secondary" id="clearWdFilterBtn" style="padding:4px 10px; font-size:11px;">Tampilkan Semua Withdrawal</button>
+      </div>
     </div>
     <h2>Withdrawal</h2>
     <div id="withdrawalList"></div>
-    <h2>Riwayat Transfer</h2>
-    <div id="transferList"></div>
+    
+    <!-- Riwayat Transfer container -->
+    <div id="transferContainer" style="display:none;">
+      <h2 id="transferHeader">Riwayat Transfer</h2>
+      <div id="transferList"></div>
+    </div>
   </section>
 
   <!-- INVOICE SECTION -->
@@ -673,8 +712,10 @@ let allWdDates = [];
 
 let activeInvoiceStatusFilter = 'ALL';
 let activeRecipientStatusFilter = 'ALL';
+let activeRecipient = '';
+let activeWdId = '';
 
-let feeFilterRecipient, invFilterTglBayar;
+let invFilterTglBayar;
 
 const themeToggleBtn = document.getElementById('themeToggle');
 const themeIcon = document.getElementById('themeIcon');
@@ -932,29 +973,33 @@ function setupFiltersAndChips() {
   setupBatchBtn('wdSelectAll', 'wdSelectNone', 'wdWdChips', renderWithdrawalTab);
   setupBatchBtn('proofSelectAll', 'proofSelectNone', 'proofWdChips', renderProof);
 
-  feeFilterRecipient = document.getElementById('feeFilterRecipient');
   invFilterTglBayar = document.getElementById('invFilterTglBayar');
-
-  feeFilterRecipient.innerHTML = '<option value="">Semua Penerima</option>';
   invFilterTglBayar.innerHTML = '<option value="">Semua Tanggal</option>';
-
-  const activeRecipients = DATA.fee_by_recipient ? [...new Set(DATA.fee_by_recipient.map(r=>norm(r.name)).filter(Boolean))].sort() : [];
-  activeRecipients.forEach(rawName => {
-    feeFilterRecipient.innerHTML += `<option value="${rawName}">${rawName.toUpperCase()}</option>`;
-  });
 
   const invDates = DATA.invoices ? [...new Set(DATA.invoices.map(i=>i['TANGGAL PEMBAYARAN'] || i['tanggal_pembayaran']).filter(Boolean))].sort() : [];
   invDates.forEach(d => invFilterTglBayar.innerHTML += `<option value="${d}">${d}</option>`);
 
-  feeFilterRecipient.onchange = renderFee;
   invFilterTglBayar.onchange = renderInvoice;
 
-  document.getElementById('feeReset').onclick = () => { 
-    document.querySelectorAll('#feeWdChips input[type=checkbox]').forEach(cb => { cb.checked = true; cb.closest('.chip').classList.add('checked'); });
-    feeFilterRecipient.value = ''; 
-    renderFee(); 
+  document.getElementById('clearRecipientFilterBtn').onclick = () => {
+    clearRecipientFilter();
+  };
+  document.getElementById('clearWdFilterBtn').onclick = () => {
+    clearWdFilter();
   };
   document.getElementById('invReset').onclick = () => { invFilterTglBayar.value = ''; renderInvoice(); };
+}
+
+function clearRecipientFilter() {
+  activeRecipient = '';
+  document.getElementById('recipientActiveFilterContainer').style.display = 'none';
+  renderFee();
+}
+
+function clearWdFilter() {
+  activeWdId = '';
+  document.getElementById('wdActiveFilterContainer').style.display = 'none';
+  renderWithdrawalTab();
 }
 
 function recipientNamesForWdDates(dateSet){
@@ -1134,7 +1179,7 @@ function renderInvoiceProgressList(totalNetPaid, totalFeeEntitlement) {
   }
 
   let displayList = invList.filter(inv => {
-    if (activeInvoiceStatusFilter === 'UNPAID') return !inv.isLunas;
+    if (activeInvoiceStatusFilter === 'UNPAID') return !inv.isLunas && !inv.isOverpaid;
     if (activeInvoiceStatusFilter === 'PARTIAL') return inv.isPartial;
     if (activeInvoiceStatusFilter === 'OVERPAID') return inv.isOverpaid;
     if (activeInvoiceStatusFilter === 'LUNAS') return inv.isLunas;
@@ -1252,7 +1297,7 @@ function renderRecipientProgressList(filteredFee, filteredPayments) {
   }
 
   let displayList = recipientList.filter(r => {
-    if (activeRecipientStatusFilter === 'UNPAID') return !r.isLunas;
+    if (activeRecipientStatusFilter === 'UNPAID') return !r.isLunas && !r.isOverpaid;
     if (activeRecipientStatusFilter === 'PARTIAL') return r.isPartial;
     if (activeRecipientStatusFilter === 'OVERPAID') return r.isOverpaid;
     if (activeRecipientStatusFilter === 'LUNAS') return r.isLunas;
@@ -1320,32 +1365,69 @@ function setRecipientFilter(status) {
   renderOverview();
 }
 
+function selectRecipientFilter(rawName) {
+  const normName = norm(rawName);
+  if (activeRecipient === normName) {
+    activeRecipient = '';
+    document.getElementById('recipientActiveFilterContainer').style.display = 'none';
+  } else {
+    activeRecipient = normName;
+    document.getElementById('recipientActiveFilterContainer').style.display = 'flex';
+    document.getElementById('selectedRecipientLabel').textContent = rawName.toUpperCase();
+  }
+  renderFee();
+}
+
+function selectWithdrawalFilter(wdId) {
+  if (activeWdId === wdId) {
+    activeWdId = '';
+    document.getElementById('wdActiveFilterContainer').style.display = 'none';
+  } else {
+    activeWdId = wdId;
+    document.getElementById('wdActiveFilterContainer').style.display = 'flex';
+    document.getElementById('selectedWdLabel').textContent = wdId;
+  }
+  renderWithdrawalTab();
+}
+
 function renderFee(){
   const selectedDates = getSelectedDatesFromContainer('feeWdChips');
   const isFiltered = selectedDates.size !== allWdDates.length;
-  const recipient = feeFilterRecipient.value;
   const names = isFiltered ? recipientNamesForWdDates(selectedDates) : null;
   let filtered = names ? (DATA.fee_by_recipient||[]).filter(r=>names.has(getRecipientName(r))) : (DATA.fee_by_recipient||[]);
   
-  if(recipient) filtered = filtered.filter(r=>matchRecipient(r, recipient));
+  if (activeRecipient) {
+    filtered = filtered.filter(r => matchRecipient(r, activeRecipient));
+    document.getElementById('recipientActiveFilterContainer').style.display = 'flex';
+  } else {
+    document.getElementById('recipientActiveFilterContainer').style.display = 'none';
+  }
+
   const feeListEl = document.getElementById('feeList');
   feeListEl.innerHTML = filtered.length ? '' : '<div class="empty-state">Tidak ada data untuk filter ini</div>';
   
-  filtered.forEach(r=>{
+  filtered.forEach(r => {
+    const rawName = r.name || r.recipient_name || r.penerima || '';
+    const normName = norm(rawName);
+    const isSelected = activeRecipient === normName;
+
     feeListEl.innerHTML += `
-      <div class="row-card" style="border-left: 3px solid var(--accent);">
+      <div class="row-card clickable ${isSelected ? 'selected-recipient' : ''}" 
+           data-tooltip="Buka Detail Fee" 
+           style="border-left: 3px solid var(--accent);" 
+           onclick="selectRecipientFilter('${rawName.replace(/'/g, "\\'")}')">
         <div class="top">
-          <span style="font-size:13.5px; font-weight:700;">${(r.name || r.recipient_name || '').toUpperCase()}</span>
+          <span style="font-size:13.5px; font-weight:700;">${rawName.toUpperCase()}</span>
           <span class="amount" style="font-size:14px; color:var(--accent);">${fmtIDR(r.amount)}</span>
         </div>
       </div>
     `;
 
-    if(recipient) {
+    if (activeRecipient) {
       const rawDetailRows = getInvoiceFeeDetailRows();
       
       const recipientItems = rawDetailRows.filter(item => {
-        if (!matchRecipient(item, recipient)) return false;
+        if (!matchRecipient(item, activeRecipient)) return false;
         if (isFiltered) {
           const itemWdDate = item.withdrawal_date || item['TANGGAL WITHDRAWAL'] || item['tanggal_withdrawal'] || wdIdToDate[item.withdrawal_id];
           if (itemWdDate && !selectedDates.has(itemWdDate)) return false;
@@ -1407,7 +1489,7 @@ function renderFee(){
           </div>
         `;
       } else {
-        feeListEl.innerHTML += `<div class="empty-state">Tidak ada rincian baris dari Invoice Fee Detail untuk penerima "${recipient.toUpperCase()}"</div>`;
+        feeListEl.innerHTML += `<div class="empty-state">Tidak ada rincian baris dari Invoice Fee Detail untuk penerima "${rawName.toUpperCase()}"</div>`;
       }
     }
   });
@@ -1441,30 +1523,41 @@ function renderWithdrawalTab(){
 
   const wdListEl = document.getElementById('withdrawalList');
   wdListEl.innerHTML = filteredWd.length ? '' : '<div class="empty-state">Tidak ada data withdrawal untuk filter ini</div>';
+  
   filteredWd.forEach(w => {
+    const isSelected = activeWdId === w.withdrawal_id;
     wdListEl.innerHTML += `
-      <div class="row-card">
+      <div class="row-card clickable ${isSelected ? 'selected-item' : ''}" 
+           data-tooltip="Buka Riwayat Transfer" 
+           onclick="selectWithdrawalFilter('${w.withdrawal_id}')">
         <div class="top"><span>${w.withdrawal_id}</span><span class="badge ${badgeClass(w.reconciliation_status)}">${w.reconciliation_status||'OPEN'}</span></div>
         <div class="mid">${w.withdrawal_date} &middot; ${w.description||''}</div>
         <div class="top"><span style="font-weight:400;color:var(--muted);">Amount</span><span class="amount">${fmtIDR(w.withdrawal_amount)}</span></div>
       </div>`;
   });
 
-  const filteredTr = (DATA.transfers||[]).filter(t => {
-    const wDate = wdIdToDate[t.withdrawal_id];
-    if (isFiltered && !selectedDates.has(wDate)) return false;
-    return true;
-  });
-
+  const transferContainerEl = document.getElementById('transferContainer');
+  const transferHeaderEl = document.getElementById('transferHeader');
   const trListEl = document.getElementById('transferList');
-  trListEl.innerHTML = filteredTr.length ? '' : '<div class="empty-state">Tidak ada data transfer untuk filter ini</div>';
-  filteredTr.forEach(t => {
-    trListEl.innerHTML += `
-      <div class="row-card">
-        <div class="top"><span>${(t.recipient_name||t.penerima||'').toUpperCase()}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
-        <div class="mid">${t.transfer_date||''} &middot; WD: ${t.withdrawal_id}</div>
-      </div>`;
-  });
+
+  if (activeWdId) {
+    transferContainerEl.style.display = 'block';
+    transferHeaderEl.textContent = `Riwayat Transfer (${activeWdId})`;
+    
+    const filteredTr = (DATA.transfers||[]).filter(t => t.withdrawal_id === activeWdId);
+    trListEl.innerHTML = filteredTr.length ? '' : '<div class="empty-state">Tidak ada riwayat transfer untuk withdrawal ini</div>';
+    
+    filteredTr.forEach(t => {
+      trListEl.innerHTML += `
+        <div class="row-card">
+          <div class="top"><span>${(t.recipient_name||t.penerima||'').toUpperCase()}</span><span class="amount">${fmtIDR(t.transfer_amount || t.amount)}</span></div>
+          <div class="mid">${t.transfer_date||''} &middot; WD: ${t.withdrawal_id}</div>
+        </div>`;
+    });
+  } else {
+    transferContainerEl.style.display = 'none';
+    trListEl.innerHTML = '';
+  }
 }
 
 function renderInvoice(){
